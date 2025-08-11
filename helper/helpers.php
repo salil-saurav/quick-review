@@ -45,7 +45,6 @@ function render_single_data($column, $count, $table_name)
          'post_id'        => $column->post_id,
          'action'         => build_action_button($column->post_id),
          'date'           => date('Y-m-d H:i A', strtotime($column->created_at)),
-         'update'         => sprintf('<span data-camp="%d" class="dashicons dashicons-edit"></span>', $column->id)
       ];
 
       render_table_row($row);
@@ -53,10 +52,11 @@ function render_single_data($column, $count, $table_name)
       $row = [
          's_no'         => $count,
          'reference'    => $column->reference,
-         'count'      => $column->count,
-         'review_url' => $column->review_url,
-         'copy'       => '<button class="copy-url" data-target="' . $column->review_url . '" >📋</button>',
-         'date'       => date('Y-m-d H:i A', strtotime($column->created_at))
+         'count'        => $column->count,
+         'review_url'   => $column->review_url,
+         'copy'         => '<button class="copy-url" data-target="' . $column->review_url . '" >📋</button>',
+         'date'         => date('Y-m-d H:i A', strtotime($column->created_at)),
+         'remove'       => sprintf('<span data-reference="%s" class="remove-row dashicons dashicons-no"></span>', $column->reference)
       ];
 
       render_table_row($row);

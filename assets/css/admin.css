@@ -151,7 +151,8 @@
    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
 }
 
-.review-wrap .review-overlay {
+.review-wrap .review-overlay,
+.confirmation-overlay {
    position: fixed;
    top: 0;
    left: 0;
@@ -166,12 +167,49 @@
    transition: opacity 0.3s ease;
 }
 
-.review-wrap .review-overlay.show {
+select#status {
+   width: 100%;
+   height: 40px;
+   border-radius: 10px;
+   margin-top: 10px;
+}
+
+.loader.modalLoader {
+   display: block;
+   left: 50%;
+   z-index: 2;
+}
+
+form#campaignForm {
+   position: relative;
+}
+
+form.loading::before {
+   content: "";
+   position: absolute;
+   top: 0;
+   width: 100%;
+   height: 100%;
+   background: #f7f7f7;
+   z-index: 1;
+}
+
+span.remove-row.dashicons.dashicons-no {
+   cursor: pointer;
+}
+
+span.remove-row.dashicons.dashicons-no:hover {
+   color: #ef4444;
+}
+
+.review-wrap .review-overlay.show,
+.confirmation-overlay.show {
    display: flex;
    opacity: 1;
 }
 
-.review-wrap .review-overlay .modal {
+.review-wrap .review-overlay .modal,
+.confirmation-overlay .modal {
    background: rgba(255, 255, 255, 0.95);
    backdrop-filter: blur(20px);
    border: 1px solid rgba(255, 255, 255, 0.2);
@@ -186,18 +224,44 @@
    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.review-wrap .review-overlay.show .modal {
+.confirmation-overlay .modal {
+   width: 400px !important;
+}
+
+div#confirmation-overlay .modal-body {
+   padding-bottom: 10px;
+}
+
+.confirmation-overlay .cta-container button {
+   padding: 5px 15px !important;
+   border-radius: 16px;
+}
+
+.confirmation-overlay .cta-container {
+   justify-content: end;
+}
+
+.confirmation-overlay .cta-container #removeRow {
+   background-color: #ef4444;
+   color: #fff;
+   border: 1px solid #ef4444;
+}
+
+.review-wrap .review-overlay.show .modal,
+.confirmation-overlay.show .modal {
    transform: translateY(0) scale(1);
    opacity: 1;
 }
 
-.review-wrap .review-overlay .modal.exit {
+.review-wrap .review-overlay .modal.exit,
+.confirmation-overlay .modal.exit {
    transform: translateY(50px) scale(0.9);
    opacity: 0;
    transition: all 0.3s cubic-bezier(0.5, 0, 0.75, 0);
 }
 
-.review-wrap .review-overlay .modal.pop {
+.review-wrap .review-overlay .modal.pop,
+.confirmation-overlay .modal.pop {
    animation: popShake 0.5s ease-out;
 }
 
@@ -450,9 +514,22 @@ ul.results-list li strong {
    overflow: hidden;
    text-transform: capitalize;
    letter-spacing: 0.5px;
-   margin-bottom: 15px;
    display: flex;
    align-items: center;
+}
+
+.cta-container {
+   display: flex;
+   align-items: center;
+   gap: 15px;
+}
+
+.cta-container button.button-secondry.button-large {
+   padding: 5px 15px;
+   border-radius: 16px;
+   display: flex;
+   align-items: center;
+   gap: 6px;
 }
 
 .review-wrap .review-overlay .button-primary {

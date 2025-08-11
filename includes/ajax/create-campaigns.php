@@ -90,6 +90,10 @@ class CreateCampaigns
          );
 
          if ($campaign_details) {
+
+            $selected_post = get_the_title($campaign_details['post_id']);
+            $campaign_details['selected_post'] = $selected_post;
+
             wp_send_json_success($campaign_details);
          } else {
             wp_send_json_error('Campaign not found');

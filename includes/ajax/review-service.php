@@ -40,6 +40,7 @@ class ReviewService
       }
 
       add_action('wp_ajax_create_review_url', [$this, 'handle_create_review_url']);
+      add_action('wp_ajax_delete_review_url', [$this, 'handle_delete_review_url']);
 
       // Action for developers to create review URLs programmatically
       add_action('qr_create_review_url', [__CLASS__, 'handle_external_create_review_url'], 10, 1);
@@ -201,7 +202,7 @@ class ReviewService
          throw new Exception('Could not generate unique reference', 500);
       }
 
-      $review_url = trailingslashit($permalink) . '/reviews/new?' . http_build_query(['reference' => $uuid]);
+      $review_url = trailingslashit($permalink) . 'reviews/new?' . http_build_query(['reference' => $uuid]);
 
       // Apply filter to allow modification of the review URL
       $review_url = apply_filters('qr_review_url', $review_url, $uuid, $post_id);
@@ -242,6 +243,36 @@ class ReviewService
          'post_id'     => $post_id,
          'campaign_id' => $campaign_id
       ]);
+   }
+
+   // Handle delete url
+
+   public function handle_delete_review_url()
+   {
+      global $wpdb;
+
+      $reference   = isset($_POST['reference']) ? sanitize_text_field($_POST['reference']) : false;
+
+      if (! $reference) {
+         wp_send_json_error(['message' => 'Missing reference.']);
+      }
+
+      // Perform deletion
+      $deleted = $wpdb->delete(
+         $this->review_table,
+         ['reference' => $reference],
+         ['%s']
+      );
+
+      if (false === $deleted) {
+         wp_send_json_error(['message' => 'Database error while deleting.']);
+      }
+
+      if (0 === $deleted) {
+         wp_send_json_error(['message' => 'No record found with this reference.']);
+      }
+
+      wp_send_json_success(['message' => 'Review deleted successfully.']);
    }
 }
 

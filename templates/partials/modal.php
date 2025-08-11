@@ -3,7 +3,7 @@
    <div class="modal">
       <div class="modal-header">
          <button class="close-button">X</button>
-         <h2 class="modal-title">Create New Campaign</h2>
+         <h2 class="modal-title"> <?= isset($_GET['post_id']) ? 'Edit Campaign' : 'Create New Campaign'  ?> </h2>
       </div>
 
       <div class="modal-body">
@@ -19,7 +19,7 @@
 
                <div class="form-group status-select-wrap">
                   <label style="display: flex; flex-direction:column"> Status
-                     <select name="status" id="status" style="display: none;" required>
+                     <select name="status" id="status" required>
                         <option value="draft">Draft</option>
                         <option value="pending">Pending</option>
                         <option value="published">published</option>
@@ -61,6 +61,7 @@
                </svg>
                Save
             </button>
+            <div class="loader modalLoader"></div>
          </form>
       </div>
    </div>
