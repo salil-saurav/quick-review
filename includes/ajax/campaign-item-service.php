@@ -11,10 +11,10 @@ namespace QuickReview;
 use Exception;
 use WP_Error;
 
-class ReviewService
+class CampaignItemService
 {
    private string $campaign_table;
-   private string $review_table;
+   private string $campaign_item_table;
    private static bool $hooks_registered = false;
 
    /**
@@ -24,8 +24,8 @@ class ReviewService
    {
       global $wpdb;
 
-      $this->campaign_table = $wpdb->prefix . QR_CAMPAIGN_TABLE;
-      $this->review_table = $wpdb->prefix . QR_REVIEW_TABLE;
+      $this->campaign_table = $wpdb->prefix . QR_REVIEW_CAMPAIGN;
+      $this->campaign_item_table = $wpdb->prefix . QR_REVIEW_CAMPAIGN_ITEM;
 
       $this->register_hooks();
    }
@@ -39,11 +39,11 @@ class ReviewService
          return;
       }
 
-      add_action('wp_ajax_create_review_url', [$this, 'handle_create_review_url']);
-      add_action('wp_ajax_delete_review_url', [$this, 'handle_delete_review_url']);
+      add_action('wp_ajax_create_campaign_item', [$this, 'handle_create_campaign_item']);
+      add_action('wp_ajax_delete_campaign_item', [$this, 'handle_delete_campaign_item']);
 
       // Action for developers to create review URLs programmatically
-      add_action('qr_create_review_url', [__CLASS__, 'handle_external_create_review_url'], 10, 1);
+      add_action('qr_create_campaign_item', [__CLASS__, 'handle_external_create_campaign_item'], 10, 1);
 
       self::$hooks_registered = true;
    }
@@ -51,7 +51,7 @@ class ReviewService
    /**
     * Handle AJAX request for creating a review link
     */
-   public function handle_create_review_url(): void
+   public function handle_create_campaign_item(): void
    {
       try {
          // Add security checks
@@ -65,12 +65,10 @@ class ReviewService
             throw new Exception('Invalid or missing post ID', 404);
          }
 
-         $result = $this->create_review_url($post_id);
+         $result = $this->create_campaign_item($post_id);
 
          wp_send_json_success([
             'message'     => 'URL created successfully',
-            'review_id'   => $result['reference'],
-            'review_url'  => $result['review_url']
          ]);
       } catch (Exception $e) {
          wp_send_json_error([
@@ -89,10 +87,8 @@ class ReviewService
     * }
     * @return string|WP_Error The review reference UUID or WP_Error on failure
     */
-   public static function handle_external_create_review_url($args)
+   public static function handle_external_create_campaign_item($args)
    {
-
-
       try {
          $post_id = isset($args['post_id']) ? (int) $args['post_id'] : 0;
          $campaign_id = isset($args['campaign_id']) ? (int) $args['campaign_id'] : 0;
@@ -106,14 +102,14 @@ class ReviewService
 
 
          $instance = new self();
-         $result = $instance->create_review_url($post_id, $campaign_id);
+         $result = $instance->create_campaign_item($post_id, $campaign_id);
 
          // Fire action after successful creation
-         do_action('qr_after_review_url_created', $result, $args);
+         do_action('qr_after_campaign_item_created', $result, $args);
 
          return $result['reference'];
       } catch (Exception $e) {
-         return new WP_Error('review_creation_failed', $e->getMessage(), ['status' => $e->getCode()]);
+         return new WP_Error('campaign_item_creation_failed', $e->getMessage(), ['status' => $e->getCode()]);
       }
    }
 
@@ -143,7 +139,7 @@ class ReviewService
     * @return array{reference: string, review_url: string, campaign_id: int}
     * @throws Exception
     */
-   private function create_review_url(int $post_id, int $campaign_id = 0): array
+   private function create_campaign_item(int $post_id, int $campaign_id = 0): array
    {
       global $wpdb;
 
@@ -188,10 +184,10 @@ class ReviewService
       $attempts     = 0;
 
       do {
-         $uuid = $this->generate_uuid_v4();
+         $uuid   = $this->generate_uuid_v4();
          $exists = $wpdb->get_var(
             $wpdb->prepare(
-               "SELECT reference FROM {$this->review_table} WHERE reference = %s",
+               "SELECT reference FROM {$this->campaign_item_table} WHERE reference = %s",
                $uuid
             )
          );
@@ -201,22 +197,21 @@ class ReviewService
       if ($exists) {
          throw new Exception('Could not generate unique reference', 500);
       }
+      // Generate base review URL
+      $review_campaign_item = add_query_arg('review', $uuid, $permalink);
 
-      $review_url = trailingslashit($permalink) . 'reviews/new?' . http_build_query(['reference' => $uuid]);
-
-      // Apply filter to allow modification of the review URL
-      $review_url = apply_filters('qr_review_url', $review_url, $uuid, $post_id);
+      // Allow filters to modify the final review URL
+      $review_campaign_item = apply_filters('qr_review_campaign_item', $review_campaign_item, $uuid, $post_id);
 
       $inserted = $wpdb->insert(
-         $this->review_table,
+         $this->campaign_item_table,
          [
             'reference'   => $uuid,
             'campaign_id' => $campaign_id,
-            'review_url'  => $review_url,
             'created_at'  => current_time('mysql'),
             'status'      => 'active'
          ],
-         ['%s', '%d', '%s', '%s', '%s']
+         ['%s', '%d', '%s', '%s']
       );
 
       if ($inserted === false) {
@@ -224,9 +219,9 @@ class ReviewService
       }
 
       return [
-         'reference'   => $uuid,
-         'review_url'  => $review_url,
-         'campaign_id' => $campaign_id
+         'reference'             => $uuid,
+         'review_campaign_item'  => $review_campaign_item,
+         'campaign_id'           => $campaign_id
       ];
    }
 
@@ -239,7 +234,7 @@ class ReviewService
     */
    public static function create_for_post(int $post_id, int $campaign_id = 0)
    {
-      return self::handle_external_create_review_url([
+      return self::handle_external_create_campaign_item([
          'post_id'     => $post_id,
          'campaign_id' => $campaign_id
       ]);
@@ -247,7 +242,7 @@ class ReviewService
 
    // Handle delete url
 
-   public function handle_delete_review_url()
+   public function handle_delete_campaign_item()
    {
       global $wpdb;
 
@@ -259,7 +254,7 @@ class ReviewService
 
       // Perform deletion
       $deleted = $wpdb->delete(
-         $this->review_table,
+         $this->campaign_item_table,
          ['reference' => $reference],
          ['%s']
       );
@@ -272,10 +267,10 @@ class ReviewService
          wp_send_json_error(['message' => 'No record found with this reference.']);
       }
 
-      wp_send_json_success(['message' => 'Review deleted successfully.']);
+      wp_send_json_success(['message' => 'Item deleted successfully.']);
    }
 }
 
 if (defined('ABSPATH')) {
-   new ReviewService();
+   new CampaignItemService();
 }

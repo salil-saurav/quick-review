@@ -1,6 +1,6 @@
 <?php
 
-require_once plugin_dir_path(__FILE__) . 'class-review-list.php';
+require_once plugin_dir_path(__FILE__) . 'class-database-manager.php';
 
 /**
  * Class Quick_Review
@@ -23,7 +23,7 @@ require_once plugin_dir_path(__FILE__) . 'class-review-list.php';
  * @method void register_admin_menu() Registers admin menu and submenus for the plugin.
  * @method void conditionally_add_screen_options(WP_Screen $screen) Adds screen options for specific plugin pages.
  * @method void render_admin_page() Renders the main admin page template.
- * @method void render_campaign_dashboard() Renders the campaign dashboard template.
+ * @method void render_campaign_item() Renders the campaign dashboard template.
  * @method void render_setup_wizard() Renders the setup wizard template.
  * @method void render_logs() Renders the logs page template.
  * @method void handle_screen_options() Handles screen options and redirects for admin pages.
@@ -126,11 +126,11 @@ class Quick_Review
 
       add_submenu_page(
          ' ',
-         'Campaign Dashboard',
-         'Campaign Dashboard',
+         'Campaign Item',
+         'Campaign Item',
          'manage_options',
          'campaign-dashboard',
-         [$this, 'render_campaign_dashboard']
+         [$this, 'render_campaign_item']
       );
 
       add_submenu_page(
@@ -159,9 +159,9 @@ class Quick_Review
       include QUICK_REVIEW_PLUGIN_DIR . 'templates/admin-page.php';
    }
 
-   public function render_campaign_dashboard(): void
+   public function render_campaign_item(): void
    {
-      include QUICK_REVIEW_PLUGIN_DIR . 'templates/campaign-dashboard.php';
+      include QUICK_REVIEW_PLUGIN_DIR . 'templates/campaign-item-dashboard.php';
    }
 
    public function render_setup_wizard(): void

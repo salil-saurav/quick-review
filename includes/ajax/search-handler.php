@@ -67,7 +67,6 @@ class QR_Search_Handler
 
       // Format the post data for response
       $formatted_posts = $this->format_post_data($post_data);
-
       wp_send_json_success(['posts' => $formatted_posts]);
 
       wp_die();

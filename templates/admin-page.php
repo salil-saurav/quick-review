@@ -8,7 +8,7 @@ if (!current_user_can('manage_options')) {
  * Class QuickReviewAdminPage
  * Handles the admin page functionality for Quick Review plugin
  */
-class QuickReviewAdminPage
+class CampaignDashboard
 {
    /**
     * Initialize the admin page
@@ -41,7 +41,7 @@ class QuickReviewAdminPage
     */
    private function render_content()
    {
-      require_once __DIR__ . '/table-content.php';
+      require_once __DIR__ . '/campaign-dashboard.php';
    }
 
    private function render_error_page()
@@ -51,4 +51,4 @@ class QuickReviewAdminPage
 }
 
 // Initialize the admin page
-new QuickReviewAdminPage();
+new CampaignDashboard();

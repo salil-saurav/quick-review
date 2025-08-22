@@ -1,163 +1,324 @@
-// ===== Utility Functions =====
-const createOrUpdateHiddenInput = (form, name, value) => {
-   if (!form) return;
-   let input = form.querySelector(`input[name="${name}"]`);
-   if (!input) {
-      input = document.createElement("input");
-      input.type = "hidden";
-      input.name = name;
-      form.appendChild(input);
+// ===== Configurationuration =====
+const Configuration = {
+   selectors: {
+      campaignItemTable: '.review-table',
+      reviewList: '.review-list',
+      dateFilter: '.date-filter',
+      modalLoader: '.loader.modalLoader',
+      editButton: 'button[data-edit="campaign"]',
+      campaignForm: '#campaignForm',
+      confirmationOverlay: '.confirmation-overlay',
+      confirmationClose: '.confirmation-overlay .close-button',
+      campaignPage: '.campaign-dashboard',
+      createCampaignTrigger: '#createCampaign',
+      popupOverlay: '.review-overlay',
+      popupCloseBtn: '.review-overlay .close-button'
+   },
+   classes: {
+      loading: 'loading',
+      hide: 'hide',
+      removeRow: 'remove-row',
+      editIcon: 'dashicons-edit',
+      copyUrl: 'copy-url'
    }
-   input.value = value;
 };
 
-const toggleLoader = (form, loader, show = true) => {
-   if (!form || !loader) return;
-   form.classList.toggle("loading", show);
-   loader.style.display = show ? "block" : "none";
+// ===== Utility Functions =====
+const DOMUtils = {
+   $: (selector) => document.querySelector(selector),
+   $$: (selector) => document.querySelectorAll(selector),
+
+   createOrUpdateHiddenInput(form, name, value) {
+      if (!form) return;
+
+      let input = form.querySelector(`input[name="${name}"]`);
+      if (!input) {
+         input = document.createElement('input');
+         input.type = 'hidden';
+         input.name = name;
+         form.appendChild(input);
+      }
+      input.value = value;
+   },
+
+   toggleLoader(form, loader, show = true) {
+      if (!form || !loader) return;
+
+      form.classList.toggle(Configuration.classes.loading, show);
+      loader.style.display = show ? 'block' : 'none';
+   },
+
+   updateFormFields(form, data) {
+      if (!form || !data) return;
+
+      Object.entries(data).forEach(([key, value]) => {
+         const input = form.querySelector(`[name="${key}"]`);
+         if (input) input.value = value;
+      });
+   }
 };
 
-const updateFormFields = (form, data) => {
-   if (!form || !data) return;
-   Object.entries(data).forEach(([key, value]) => {
-      const input = form.querySelector(`[name="${key}"]`);
-      if (input) input.value = value;
-   });
-};
-
-
-const handleDelete = async (reference, popupInstance) => {
-   try {
+// ===== API Service =====
+const APIService = {
+   async makeRequest(action, additionalData = {}) {
       const formData = new FormData();
-      formData.append("action", "delete_review_url");
-      formData.append("reference", reference);
+      formData.append('action', action);
+
+      Object.entries(additionalData).forEach(([key, value]) => {
+         formData.append(key, value);
+      });
 
       const response = await fetch(window.ajaxurl, {
-         method: "POST",
-         credentials: "same-origin",
+         method: 'POST',
+         credentials: 'same-origin',
          body: formData,
       });
 
-      const json = await response.json();
-      if (json.success && json.data) {
+      return response.json();
+   },
 
-         AlertService.show(json.data.message, 'success');
+   async deleteRow(key, flag) {
+      if (flag === 'reviewUrl') {
+         return this.makeRequest('delete_campaign_item', { reference: key });
+      } else {
+         console.log("this ran");
+
+         return this.makeRequest('delete_campaign', { id: key });
       }
-   } catch (err) {
-      console.error("Failed to delete url:", err);
-   } finally {
-      popupInstance.hide();
-      location.reload();
+   },
+
+   async getCampaignData(campaignId) {
+      return this.makeRequest('autofill_campaign', { campaign_id: campaignId });
    }
-}
 
-// ===== DOM Ready =====
-document.addEventListener("DOMContentLoaded", () => {
-   const $ = (selector) => document.querySelector(selector);
+};
 
-   // Cached elements
-   const reviewTable = $(".review-table");
-   const reviewList = $(".review-list");
-   const dateFilter = $(".date-filter");
-   const modalLoader = $(".loader.modalLoader");
-   const editButton = $('button[data-edit="campaign"]');
-   const campaignForm = $("#campaignForm");
-   const confirmationOverlay = $('.confirmation-overlay');
-   const confirmationClose = $('.confirmation-overlay .close-button');
-   const iscampaignPage = $('.campaign-dashboard');
+// ===== Campaign Management =====
+class CampaignManager {
+   constructor() {
+      this.elements = this.initializeElements();
+      this.popup = null;
+      this.confirmationPopup = null;
+   }
 
-   const popupElements = {
-      overlay: $(".review-overlay"),
-      closeBtn: $(".review-overlay .close-button"),
-   };
+   initializeElements() {
+      const elements = {};
+      Object.entries(Configuration.selectors).forEach(([key, selector]) => {
+         elements[key] = DOMUtils.$(selector);
+      });
+      return elements;
+   }
 
-   // ===== Table & Filter UI =====
-   if (reviewTable && reviewList && dateFilter) {
-      const total = parseInt(reviewList.dataset.total || "0", 10);
+   async handleDelete(key, flag, popupInstance, deleteButton) {
+      deleteButton.textContent = 'Removing...';
 
-      reviewTable.classList.toggle("hide", reviewList.children.length === 0);
-      dateFilter.classList.toggle("hide", total === 0);
+      try {
+         const response = await APIService.deleteRow(key, flag);
 
+         if (response.success && response.data) {
+            AlertService.show(response.data.message, 'success');
+            deleteButton.textContent = 'Removed';
+         } else {
+            AlertService.show(response.data.message, 'error');
+         }
+      } catch (error) {
+         console.error('Failed to delete campaign:', error);
+         deleteButton.textContent = 'Failed';
+      } finally {
+         popupInstance.hide();
+         location.reload();
+      }
+   }
 
-      if (iscampaignPage) {
-         const confirmation = new PopupHandler(confirmationOverlay, confirmationClose);
-         const cancel = confirmationOverlay.querySelector('.cancel-delete');
+   async loadCampaignData(campaignId) {
+      if (!campaignId || !this.elements.campaignForm) return;
 
-         const deleteRow = document.getElementById('removeRow');
+      DOMUtils.toggleLoader(this.elements.campaignForm, this.elements.modalLoader, true);
 
-         reviewTable.addEventListener("click", (e) => {
-            if (!(e.target.classList.contains('remove-row'))) {
-               return
+      try {
+         const response = await APIService.getCampaignData(campaignId);
+
+         if (response.success && response.data) {
+            DOMUtils.updateFormFields(this.elements.campaignForm, response.data);
+            DOMUtils.createOrUpdateHiddenInput(this.elements.campaignForm, 'campaign_id', campaignId);
+         }
+      } catch (error) {
+         console.error('Failed to load campaign data:', error);
+      } finally {
+         DOMUtils.toggleLoader(this.elements.campaignForm, this.elements.modalLoader, false);
+      }
+   }
+
+   setupTableUI() {
+      const { campaignItemTable, reviewList, dateFilter } = this.elements;
+
+      if (!campaignItemTable || !reviewList || !dateFilter) return;
+
+      const total = parseInt(reviewList.dataset.total || '0', 10);
+      const hasItems = reviewList.children.length > 0;
+
+      campaignItemTable.classList.toggle(Configuration.classes.hide, !hasItems);
+      dateFilter.classList.toggle(Configuration.classes.hide, total === 0);
+   }
+
+   setupConfirmationDialog() {
+      if (!this.elements.confirmationOverlay) return;
+
+      this.confirmationPopup = new PopupHandler(
+         this.elements.confirmationOverlay,
+         this.elements.confirmationClose
+      );
+
+      const cancelButton = this.elements.confirmationOverlay.querySelector('.cancel-delete');
+      const deleteButton = document.getElementById('removeRow');
+
+      if (cancelButton) {
+         cancelButton.addEventListener('click', () => this.confirmationPopup.hide());
+      }
+
+      if (deleteButton) {
+         deleteButton.addEventListener('click', async () => {
+            const key = deleteButton.dataset.id;
+
+            if (this.elements.campaignPage) {
+               await this.handleDelete(key, 'reviewUrl', this.confirmationPopup, deleteButton);
+            } else {
+               await this.handleDelete(key, '', this.confirmationPopup, deleteButton);
+
             }
-
-            const reference = e.target.dataset.reference;
-            confirmation.show();
-
-            deleteRow.dataset.id = reference;
          });
-
-         cancel.addEventListener('click', () => confirmation.hide());
-
-         deleteRow.addEventListener('click', async () => {
-            const reference = deleteRow.dataset.id;
-            handleDelete(reference, confirmation)
-         })
       }
-
    }
 
-   // ===== Edit Campaign Button =====
-   if (editButton && campaignForm) {
-      editButton.addEventListener("click", async () => {
-         const campaignID = editButton.dataset.camp;
-         if (!campaignID) return;
+   setupEventListeners() {
+      this.setupEditButtonListener();
+      this.setupTableClickListener();
+      this.setupCreateCampaignListener();
+   }
 
-         const popup = new PopupHandler(popupElements.overlay, popupElements.closeBtn);
-         popup.show();
+   setupEditButtonListener() {
+      if (!this.elements.editButton) return;
 
-         toggleLoader(campaignForm, modalLoader, true);
-
-         try {
-            const formData = new FormData();
-            formData.append("action", "autofill_campaign");
-            formData.append("campaign_id", campaignID);
-
-            const response = await fetch(window.ajaxurl, {
-               method: "POST",
-               credentials: "same-origin",
-               body: formData,
-            });
-
-            const json = await response.json();
-            if (json.success && json.data) {
-               updateFormFields(campaignForm, json.data);
-               createOrUpdateHiddenInput(campaignForm, "campaign_id", campaignID);
-            }
-         } catch (err) {
-            console.error("Failed to autofill campaign:", err);
-         } finally {
-            toggleLoader(campaignForm, modalLoader, false);
+      this.elements.editButton.addEventListener('click', async () => {
+         const campaignId = this.elements.editButton.dataset.camp;
+         if (campaignId) {
+            this.showPopupAndLoadData(campaignId);
          }
       });
    }
 
-   // ===== Create Campaign Popup =====
-   const campaignTrigger = $("#createCampaign");
-   if (campaignTrigger && popupElements.overlay && popupElements.closeBtn) {
-      const popup = new PopupHandler(popupElements.overlay, popupElements.closeBtn);
-      campaignTrigger.addEventListener("click", () => popup.show());
-   }
-});
+   setupTableClickListener() {
+      if (!this.elements.campaignItemTable) return;
 
-// ===== Global: Copy URL Button =====
-document.addEventListener("click", (e) => {
-   const btn = e.target.closest("button.copy-url");
-   if (!btn) return;
+      this.elements.campaignItemTable.addEventListener('click', async (e) => {
+         // Handle edit button clicks
+         const editBtn = e.target.closest(`.${Configuration.classes.editIcon}`);
+         if (editBtn) {
+            const campaignId = editBtn.dataset.camp;
+            if (campaignId) {
+               this.showPopupAndLoadData(campaignId);
+            }
+            return;
+         }
 
-   const url = btn.dataset.target;
-   if (!url) {
-      console.warn("Missing data-target attribute.");
-      return;
+         // Handle Campaign Delete button clicks
+
+         if (!this.elements.campaignPage && e.target.classList.contains(Configuration.classes.removeRow)) {
+            const campaignId = e.target.dataset.id;
+
+            if (campaignId && this.confirmationPopup) {
+
+               this.confirmationPopup.show();
+
+               const deleteButton = document.getElementById('removeRow');
+               if (deleteButton) {
+                  deleteButton.dataset.id = campaignId;
+               }
+            }
+         }
+
+         // Handle delete button clicks (only on campaign page)
+         if (this.elements.campaignPage && e.target.classList.contains(Configuration.classes.removeRow)) {
+            const reference = e.target.dataset.reference;
+            if (reference && this.confirmationPopup) {
+
+               this.confirmationPopup.show();
+               const deleteButton = document.getElementById('removeRow');
+               if (deleteButton) {
+                  deleteButton.dataset.id = reference;
+               }
+            }
+         }
+      });
    }
-   ClipboardService.copy(url);
+
+   setupCreateCampaignListener() {
+      if (!this.elements.createCampaignTrigger) return;
+
+      this.elements.createCampaignTrigger.addEventListener('click', () => {
+         if (this.popup) {
+            this.popup.show();
+         }
+      });
+   }
+
+   showPopupAndLoadData(campaignId) {
+      if (this.popup) {
+         this.popup.show();
+         this.loadCampaignData(campaignId);
+      }
+   }
+
+   initializePopup() {
+      if (this.elements.popupOverlay && this.elements.popupCloseBtn) {
+         this.popup = new PopupHandler(this.elements.popupOverlay, this.elements.popupCloseBtn);
+      }
+   }
+
+   init() {
+      this.initializePopup();
+      this.setupTableUI();
+      this.setupConfirmationDialog();
+      this.setupEventListeners();
+   }
+}
+
+// ===== Global Event Handlers =====
+class GlobalEventHandlers {
+   static setupCopyUrlHandler() {
+      document.addEventListener('click', (e) => {
+         const btn = e.target.closest(`button.${Configuration.classes.copyUrl}`);
+         if (!btn) return;
+
+         const url = btn.dataset.target;
+         if (!url) {
+            console.warn('Missing data-target attribute for copy URL button.');
+            return;
+         }
+
+         ClipboardService.copy(url);
+      });
+   }
+
+   static init() {
+      this.setupCopyUrlHandler();
+   }
+}
+
+// ===== Application Initialization =====
+class App {
+   constructor() {
+      this.campaignManager = new CampaignManager();
+   }
+
+   init() {
+      this.campaignManager.init();
+      GlobalEventHandlers.init();
+   }
+}
+
+// ===== DOM Ready =====
+document.addEventListener('DOMContentLoaded', () => {
+   const app = new App();
+   app.init();
 });

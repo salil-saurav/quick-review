@@ -11,13 +11,13 @@ namespace QuickReview;
 use Exception;
 use WP_Error;
 
-class CreateCampaigns
+class CampaignService
 {
    private const NONCE_NAME = 'submit';
    private const NONCE_ACTION = 'submit_nonce';
 
    private string $campaign_table;
-   private string $review_table;
+   private string $campaign_item_table;
    private static bool $hooks_registered = false;
 
    /**
@@ -27,8 +27,8 @@ class CreateCampaigns
    {
       global $wpdb;
 
-      $this->campaign_table = $wpdb->prefix . QR_CAMPAIGN_TABLE;
-      $this->review_table = $wpdb->prefix . QR_REVIEW_TABLE;
+      $this->campaign_table = $wpdb->prefix . QR_REVIEW_CAMPAIGN;
+      $this->campaign_item_table = $wpdb->prefix . QR_REVIEW_CAMPAIGN_ITEM;
 
       $this->register_hooks();
    }
@@ -44,6 +44,8 @@ class CreateCampaigns
 
       add_action('wp_ajax_create_campaign', [$this, 'handle_create_campaign']);
       add_action('wp_ajax_autofill_campaign', [$this, 'handle_autofill']);
+      add_action('wp_ajax_delete_campaign', [$this, 'handle_delete_campaign']);
+
       add_action('qr_create_campaign', [__CLASS__, 'handle_external_create_campaign_static'], 10, 1);
 
       self::$hooks_registered = true;
@@ -313,7 +315,7 @@ class CreateCampaigns
    private static function campaign_exists(array $data): ?int
    {
       global $wpdb;
-      $campaign_table = $wpdb->prefix . QR_CAMPAIGN_TABLE;
+      $campaign_table = $wpdb->prefix . QR_REVIEW_CAMPAIGN;
 
       $existing = $wpdb->get_var($wpdb->prepare(
          "SELECT id FROM {$campaign_table}
@@ -337,7 +339,7 @@ class CreateCampaigns
    {
       global $wpdb;
 
-      $campaign_table = $wpdb->prefix . QR_CAMPAIGN_TABLE;
+      $campaign_table = $wpdb->prefix . QR_REVIEW_CAMPAIGN;
       $is_update = !empty($data['campaign_id']);
 
       $payload = [
@@ -407,8 +409,38 @@ class CreateCampaigns
          throw new Exception('End date must be after start date', 400);
       }
    }
+
+   public function handle_delete_campaign()
+   {
+      global $wpdb;
+
+      $id  = isset($_POST['id']) ? sanitize_text_field($_POST['id']) : false;
+
+      if (! $id) {
+         wp_send_json_error(['message' => 'Missing Campaign ID.']);
+      }
+
+      $campaign_table = $wpdb->prefix . QR_REVIEW_CAMPAIGN;
+
+      // Perform deletion
+      $deleted = $wpdb->delete(
+         $campaign_table,
+         ['id' => $id],
+         ['%d']
+      );
+
+      if (false === $deleted) {
+         wp_send_json_error(['message' => 'Database error while deleting.']);
+      }
+
+      if (0 === $deleted) {
+         wp_send_json_error(['message' => 'No record found with this ID.']);
+      }
+
+      wp_send_json_success(['message' => 'Campaign deleted successfully.']);
+   }
 }
 
 if (defined('ABSPATH')) {
-   new CreateCampaigns();
+   new CampaignService();
 }

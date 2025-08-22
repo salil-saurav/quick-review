@@ -10,7 +10,7 @@ function review_url_count($campaign_id)
 {
    global $wpdb;
 
-   $review_table = $wpdb->prefix . QR_REVIEW_TABLE;
+   $review_table = $wpdb->prefix . QR_REVIEW_CAMPAIGN_ITEM;
 
    $total_count = $wpdb->get_var(
       $wpdb->prepare(
@@ -30,10 +30,10 @@ function review_url_count($campaign_id)
  * @param string $table_name The name of the table to determine rendering logic.
  * @return void
  */
-function render_single_data($column, $count, $table_name)
+function render_single_data($column, $count, $table_name, $post_id = false)
 {
    // Build table row
-   if ($table_name === QR_CAMPAIGN_TABLE) {
+   if ($table_name === QR_REVIEW_CAMPAIGN) {
 
       $row = [
          's_no'           => $count,
@@ -45,16 +45,26 @@ function render_single_data($column, $count, $table_name)
          'post_id'        => $column->post_id,
          'action'         => build_action_button($column->post_id),
          'date'           => date('Y-m-d H:i A', strtotime($column->created_at)),
+         'update'         => sprintf('<span data-camp="%d" class="dashicons dashicons-edit"></span>', $column->id),
+         'remove'       => sprintf('<span data-id="%s" class="remove-row dashicons dashicons-no"></span>', $column->id)
+
       ];
 
       render_table_row($row);
    } else {
+
+      $permalink = get_permalink($post_id);
+
+      $review_url = trailingslashit($permalink) . 'reviews/new?' . http_build_query(
+         ['reference' => $column->reference]
+      );
+
       $row = [
          's_no'         => $count,
          'reference'    => $column->reference,
          'count'        => $column->count,
-         'review_url'   => $column->review_url,
-         'copy'         => '<button class="copy-url" data-target="' . $column->review_url . '" >📋</button>',
+         'review_url'   => $review_url,
+         'copy'         => '<button class="copy-url" data-target="' . $review_url . '" >📋</button>',
          'date'         => date('Y-m-d H:i A', strtotime($column->created_at)),
          'remove'       => sprintf('<span data-reference="%s" class="remove-row dashicons dashicons-no"></span>', $column->reference)
       ];
@@ -114,8 +124,6 @@ function render_table_row($row)
    echo "</tr>";
 }
 
-
-
 /**
  * Renders the table with paginated data and optional date/campaign filters.
  *
@@ -142,7 +150,7 @@ function render_table($page_data, $table_name, $post_id = false)
 
    // Filter by campaign_id from post_id
    if ($post_id) {
-      $campaign_table = $wpdb->prefix . QR_CAMPAIGN_TABLE;
+      $campaign_table = $wpdb->prefix . QR_REVIEW_CAMPAIGN;
       $campaign_id = $wpdb->get_var($wpdb->prepare(
          "SELECT id FROM $campaign_table WHERE post_id = %d",
          $post_id
@@ -173,8 +181,9 @@ function render_table($page_data, $table_name, $post_id = false)
 
    $data = $wpdb->get_results($wpdb->prepare($query, $query_args));
 
-   // Render the filter form
-   echo <<<HTML
+   if (!$post_id) {
+      // Render the filter form
+      echo <<<HTML
    <div class="date-filter">
       <div></div>
       <div class="date-filter-grp">
@@ -191,6 +200,7 @@ function render_table($page_data, $table_name, $post_id = false)
       </div>
    </div>
    HTML;
+   }
 
    if (empty($data)) {
       echo '<p class="no-urls">' . __('No data found.', 'quick-review') . '</p>';
@@ -201,7 +211,8 @@ function render_table($page_data, $table_name, $post_id = false)
    $starting_count = $offset + 1;
    $count = $starting_count;
    foreach ($data as $column) {
-      render_single_data($column, $count, $table_name);
+
+      render_single_data($column, $count, $table_name, $post_id);
       $count++;
    }
 }
@@ -237,7 +248,7 @@ function get_total_count($include_dates, $table_name, $post_id = false)
    }
 
    if ($post_id) {
-      $campaign_table = $wpdb->prefix . QR_CAMPAIGN_TABLE;
+      $campaign_table = $wpdb->prefix . QR_REVIEW_CAMPAIGN;
 
       $campaign_id = $wpdb->get_var($wpdb->prepare(
          "SELECT id FROM $campaign_table WHERE post_id = %d",

@@ -4,7 +4,7 @@ class ReviewService {
    }
 
    async create(formData) {
-      formData.append('action', 'create_review_url');
+      formData.append('action', 'create_campaign_item');
       formData.append('post_id', this.createBtn.dataset.post);
 
       const response = await fetch(window.ajaxurl, {

@@ -40,8 +40,8 @@ class ReviewList
    {
       global $wpdb;
 
-      $campaign_table_name = $wpdb->prefix . QR_CAMPAIGN_TABLE;
-      $review_table_name   = $wpdb->prefix . QR_REVIEW_TABLE;
+      $campaign_table_name = $wpdb->prefix . QR_REVIEW_CAMPAIGN;
+      $review_table_name   = $wpdb->prefix . QR_REVIEW_CAMPAIGN_ITEM;
 
       // Check if both tables exist
       if ($this->tables_exist([$campaign_table_name, $review_table_name])) {
@@ -112,19 +112,17 @@ class ReviewList
       global $wpdb;
 
       $charset_collate = $wpdb->get_charset_collate();
-      $campaign_table_name = $wpdb->prefix . QR_CAMPAIGN_TABLE;
+      $campaign_table_name = $wpdb->prefix . QR_REVIEW_CAMPAIGN;
 
       $sql = "CREATE TABLE $table_name (
-            reference VARCHAR(36) NOT NULL,
-            campaign_id INT NOT NULL,
-            count INT DEFAULT 0,
-            review_url VARCHAR(255) NOT NULL,
-            status ENUM('active', 'inactive') DEFAULT 'inactive',
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
-            PRIMARY KEY (reference),
-            UNIQUE KEY uk_review_url (review_url),
-            FOREIGN KEY (campaign_id) REFERENCES $campaign_table_name(id) ON DELETE CASCADE
-        ) $charset_collate;";
+         reference VARCHAR(36) NOT NULL,
+         campaign_id INT NOT NULL,
+         `count` INT DEFAULT 0,
+         status ENUM('active', 'inactive') DEFAULT 'inactive',
+         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+         PRIMARY KEY (reference),
+         FOREIGN KEY (campaign_id) REFERENCES $campaign_table_name(id) ON DELETE CASCADE
+     ) $charset_collate;";
 
       require_once ABSPATH . 'wp-admin/includes/upgrade.php';
       dbDelta($sql);

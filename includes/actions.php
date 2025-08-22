@@ -21,8 +21,8 @@
  *
  * Database Tables:
  * - QR_SETTINGS_TABLE: Stores plugin settings (option_name, option_value).
- * - QR_REVIEW_TABLE: Stores campaign items (reference, count, campaign_id).
- * - QR_CAMPAIGN_TABLE: Stores campaigns (id, post_id, end_date, status).
+ * - QR_REVIEW_CAMPAIGN_ITEM: Stores campaign items (reference, count, campaign_id).
+ * - QR_REVIEW_CAMPAIGN: Stores campaigns (id, post_id, end_date, status).
  *
  * Security:
  * - Uses nonce verification for form submissions.
@@ -104,15 +104,14 @@ function on_comment_approved($comment_id, $comment_status)
 
    global $wpdb;
 
-   $review_table   = $wpdb->prefix . QR_REVIEW_TABLE;   // Contains campaign items (hash, count, campaign_id)
-   $campaign_table = $wpdb->prefix . QR_CAMPAIGN_TABLE; // Contains campaign_id, post_id, end_date, status
-
-   $comment_post_id = get_comment($comment_id)->comment_post_ID;
+   $campaign_item_table = $wpdb->prefix . QR_REVIEW_CAMPAIGN_ITEM;
+   $campaign_table      = $wpdb->prefix . QR_REVIEW_CAMPAIGN;
+   $comment_post_id     = get_comment($comment_id)->comment_post_ID;
 
    // Get campaign item by reference
    $campaign_item = $wpdb->get_row(
       $wpdb->prepare(
-         "SELECT * FROM $review_table WHERE `reference` = %s",
+         "SELECT * FROM $campaign_item_table WHERE `reference` = %s",
          $reference
       ),
       ARRAY_A
@@ -144,7 +143,7 @@ function on_comment_approved($comment_id, $comment_status)
       : 0;
 
    $wpdb->update(
-      $review_table,
+      $campaign_item_table,
       ['count' => $current_count + 1],
       ['reference' => $reference],
       ['%d'],

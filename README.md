@@ -12,7 +12,7 @@ This guide covers:
 
 ## 📌 Actions
 
-### 1. `qr_create_review_url`
+### 1. `qr_create_campaign_item`
 
 Triggered when you want to create a review URL programmatically **from code**.
 
@@ -27,7 +27,7 @@ $args = [
     'campaign_id' => 0     // Optional: Specific campaign ID
 ];
 
-do_action('qr_create_review_url', $args);
+do_action('qr_create_campaign_item', $args);
 
 // example case
 
