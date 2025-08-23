@@ -32,7 +32,7 @@ require_once plugin_dir_path(__FILE__) . 'class-database-manager.php';
 
 class Quick_Review
 {
-   private $base_url = QUICK_REVIEW_PLUGIN_URL;
+   private $base_url = QR_PLUGIN_URL;
 
    public function init(): void
    {
@@ -45,7 +45,7 @@ class Quick_Review
       if (is_admin()) {
          update_option('qrs_do_activation_redirect', true);
       }
-      new ReviewList(); // Assuming this is required for DB setup or logic
+      new DatabaseManager();
    }
 
    public static function deactivate(): void
@@ -59,11 +59,11 @@ class Quick_Review
 
    private function load_dependencies(): void
    {
-      foreach (glob(QUICK_REVIEW_PLUGIN_DIR . 'includes/ajax/*.php') as $ajaxFile) {
+      foreach (glob(QR_PLUGIN_DIR . 'includes/ajax/*.php') as $ajaxFile) {
          require_once $ajaxFile;
       }
 
-      require_once QUICK_REVIEW_PLUGIN_DIR . 'includes/actions.php';
+      require_once QR_PLUGIN_DIR . 'includes/actions.php';
    }
 
    private function init_hooks(): void
@@ -156,17 +156,17 @@ class Quick_Review
 
    public function render_admin_page(): void
    {
-      include QUICK_REVIEW_PLUGIN_DIR . 'templates/admin-page.php';
+      include QR_PLUGIN_DIR . 'templates/admin-page.php';
    }
 
    public function render_campaign_item(): void
    {
-      include QUICK_REVIEW_PLUGIN_DIR . 'templates/campaign-item-dashboard.php';
+      include QR_PLUGIN_DIR . 'templates/campaign-item-dashboard.php';
    }
 
    public function render_setup_wizard(): void
    {
-      include QUICK_REVIEW_PLUGIN_DIR . 'templates/setup-wizard.php';
+      include QR_PLUGIN_DIR . 'templates/setup-wizard.php';
    }
 
    public function handle_screen_options(): void

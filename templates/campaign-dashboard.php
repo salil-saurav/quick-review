@@ -1,5 +1,5 @@
 <?php
-require_once QUICK_REVIEW_PLUGIN_DIR . '/helper/helpers.php';
+require_once QR_PLUGIN_DIR . '/helper/helpers.php';
 
 $page_data = [];
 
@@ -26,6 +26,7 @@ $page_data['current_page']   =  $current_page;
       <thead>
          <tr>
             <th>S/No</th>
+            <th> Campaign ID </th>
             <th>Campaign Name</th>
             <th>Total Reviews</th>
             <th>Start Date</th>
@@ -52,4 +53,4 @@ require_once __DIR__ . '/partials/confirmation.php';
 
 ?>
 
-<script src="<?= QUICK_REVIEW_PLUGIN_URL ?>/includes/ajax/script/campaign-service.js"></script>
+<script src="<?= QR_PLUGIN_URL ?>/includes/ajax/script/campaign-service.js"></script>

@@ -37,6 +37,7 @@ function render_single_data($column, $count, $table_name, $post_id = false)
 
       $row = [
          's_no'           => $count,
+         'id'             => $column->id,
          'campaign_name'  => $column->campaign_name,
          'review_count'   => sprintf('<span class="review_count" data-post="%d"> %d </span>', esc_attr($column->post_id), review_url_count($column->id)),
          'start_date'     => $column->start_date,

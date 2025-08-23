@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Class ReviewList
+ * Class DatabaseManager
  *
  * Handles the initialization and management of review-related database tables for the Quick Review plugin.
  *
@@ -15,13 +15,13 @@
  * - maybe_create_tables(): Checks for table existence and creates them if missing.
  * - tables_exist(array $table_names): Verifies the existence of specified tables.
  * - create_campaign_table(string $table_name): Creates the campaign table with required columns and constraints.
- * - create_review_table(string $table_name): Creates the review table with a foreign key to the campaign table.
+ * - create_campaign_item_table(string $table_name): Creates the review table with a foreign key to the campaign table.
  *
  * Usage:
  * Instantiate this class to ensure the necessary tables for campaign and review management are present in the database.
  */
 
-class ReviewList
+class DatabaseManager
 {
    /**
     * Initialize the class and set up the database
@@ -41,16 +41,16 @@ class ReviewList
       global $wpdb;
 
       $campaign_table_name = $wpdb->prefix . QR_REVIEW_CAMPAIGN;
-      $review_table_name   = $wpdb->prefix . QR_REVIEW_CAMPAIGN_ITEM;
+      $campaign_item_table   = $wpdb->prefix . QR_REVIEW_CAMPAIGN_ITEM;
 
       // Check if both tables exist
-      if ($this->tables_exist([$campaign_table_name, $review_table_name])) {
+      if ($this->tables_exist([$campaign_table_name, $campaign_item_table])) {
          return true;
       }
 
       // Create tables and return true only if both are created successfully
       return $this->create_campaign_table($campaign_table_name) &&
-         $this->create_review_table($review_table_name);
+         $this->create_campaign_item_table($campaign_item_table);
    }
 
    /**
@@ -84,22 +84,25 @@ class ReviewList
       $charset_collate = $wpdb->get_charset_collate();
 
       $sql = "CREATE TABLE $table_name (
-            id INT NOT NULL AUTO_INCREMENT,
-            campaign_name VARCHAR(255) NOT NULL,
-            start_date DATE NOT NULL,
-            end_date DATE NOT NULL,
-            status ENUM('draft', 'pending', 'published') DEFAULT 'draft',
-            post_id INT NOT NULL,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
-            PRIMARY KEY (id)
-        ) $charset_collate;";
+        id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+        campaign_name VARCHAR(255) NOT NULL,
+        start_date DATE NOT NULL,
+        end_date DATE NOT NULL,
+        status ENUM('draft', 'pending', 'published') DEFAULT 'draft',
+        post_id INT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        PRIMARY KEY (id)
+    ) $charset_collate;";
 
       require_once ABSPATH . 'wp-admin/includes/upgrade.php';
       dbDelta($sql);
 
+      $wpdb->query("ALTER TABLE $table_name AUTO_INCREMENT = 256737");
+
       // Verify table creation
       return $wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table_name)) === $table_name;
    }
+
 
    /**
     * Create the review table with foreign key to campaign table
@@ -107,7 +110,7 @@ class ReviewList
     * @param string $table_name Full table name with prefix
     * @return bool True on success, false on failure
     */
-   private function create_review_table(string $table_name): bool
+   private function create_campaign_item_table(string $table_name): bool
    {
       global $wpdb;
 
@@ -116,7 +119,7 @@ class ReviewList
 
       $sql = "CREATE TABLE $table_name (
          reference VARCHAR(36) NOT NULL,
-         campaign_id INT NOT NULL,
+         campaign_id INT UNSIGNED NOT NULL,
          `count` INT DEFAULT 0,
          status ENUM('active', 'inactive') DEFAULT 'inactive',
          created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

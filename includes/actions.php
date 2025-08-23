@@ -89,12 +89,91 @@ function create_or_update_qr_settings($data = [])
 }
 
 
-add_action('wp_set_comment_status', 'on_comment_approved', 10, 2);
-
-function on_comment_approved($comment_id, $comment_status)
+/**
+ * Handle comment status changes for reference-based reviews.
+ */
+add_action('wp_set_comment_status', 'qr_handle_comment_status_change', 10, 2);
+function qr_handle_comment_status_change($comment_id, $comment_status)
 {
-   if ($comment_status !== 'approve') {
+   global $wpdb;
+
+   error_log("qr_handle_comment_status_change: Called for comment_id={$comment_id}, status={$comment_status}");
+
+   $reference = get_comment_meta($comment_id, 'reference', true);
+   error_log("qr_handle_comment_status_change: Reference meta = " . print_r($reference, true));
+   if (empty($reference)) {
+      error_log("qr_handle_comment_status_change: No reference found, aborting.");
       return;
+   }
+
+   $campaign_item_table = $wpdb->prefix . QR_REVIEW_CAMPAIGN_ITEM;
+   $campaign_table      = $wpdb->prefix . QR_REVIEW_CAMPAIGN;
+   $comment             = get_comment($comment_id);
+   $comment_post_id     = $comment ? $comment->comment_post_ID : 0;
+
+   error_log("qr_handle_comment_status_change: campaign_item_table={$campaign_item_table}, campaign_table={$campaign_table}, comment_post_id={$comment_post_id}");
+
+   // Validate campaign
+   $campaign_item = $wpdb->get_row(
+      $wpdb->prepare(
+         "SELECT ci.reference, ci.count, ci.campaign_id, c.start_date, c.end_date, c.post_id
+       FROM $campaign_item_table ci
+       INNER JOIN $campaign_table c ON ci.campaign_id = c.id
+       WHERE ci.reference = %s
+         AND c.post_id = %d
+         AND (c.start_date IS NULL OR c.start_date <= NOW())
+         AND (c.end_date IS NULL OR c.end_date >= NOW())",
+         $reference,
+         $comment_post_id
+      ),
+      ARRAY_A
+   );
+
+
+   error_log("qr_handle_comment_status_change: campaign_item = " . print_r($campaign_item, true));
+
+   if (!$campaign_item) {
+      error_log("qr_handle_comment_status_change: No valid campaign item found, aborting.");
+      return;
+   }
+
+   // If just approved → increment
+   if ($comment_status === 'approve') {
+      $result = $wpdb->query(
+         $wpdb->prepare(
+            "UPDATE $campaign_item_table
+                 SET `count` = COALESCE(`count`, 0) + 1
+                 WHERE reference = %s",
+            $reference
+         )
+      );
+      error_log("qr_handle_comment_status_change: Incremented count for reference={$reference}, result={$result}");
+   }
+   // If changed from approved → something else → decrement
+   else {
+      $result = $wpdb->query(
+         $wpdb->prepare(
+            "UPDATE $campaign_item_table
+                 SET `count` = GREATEST(COALESCE(`count`, 0) - 1, 0)
+                 WHERE reference = %s",
+            $reference
+         )
+      );
+      error_log("qr_handle_comment_status_change: Decremented count for reference={$reference}, result={$result}");
+   }
+}
+
+/**
+ * Handle comment deletion → decrement if approved.
+ */
+add_action('delete_comment', 'qr_handle_comment_deletion');
+function qr_handle_comment_deletion($comment_id)
+{
+   global $wpdb;
+
+   $comment = get_comment($comment_id);
+   if (!$comment || $comment->comment_approved !== '1') {
+      return; // only decrement if it was approved
    }
 
    $reference = get_comment_meta($comment_id, 'reference', true);
@@ -102,51 +181,16 @@ function on_comment_approved($comment_id, $comment_status)
       return;
    }
 
-   global $wpdb;
-
    $campaign_item_table = $wpdb->prefix . QR_REVIEW_CAMPAIGN_ITEM;
-   $campaign_table      = $wpdb->prefix . QR_REVIEW_CAMPAIGN;
-   $comment_post_id     = get_comment($comment_id)->comment_post_ID;
 
-   // Get campaign item by reference
-   $campaign_item = $wpdb->get_row(
+   $wpdb->query(
       $wpdb->prepare(
-         "SELECT * FROM $campaign_item_table WHERE `reference` = %s",
+         "UPDATE $campaign_item_table
+             SET `count` = GREATEST(COALESCE(`count`, 0) - 1, 0)
+             WHERE reference = %s",
          $reference
-      ),
-      ARRAY_A
-   );
-   if (!$campaign_item || empty($campaign_item['campaign_id'])) {
-      return;
-   }
-
-   $campaign_id = (int) $campaign_item['campaign_id'];
-
-   // Get campaign by ID and validate it
-   $campaign = $wpdb->get_row(
-      $wpdb->prepare(
-         "SELECT * FROM $campaign_table WHERE `id` = %d AND `post_id` = %d AND `status` = %s AND (`end_date` IS NULL OR `end_date` > NOW())",
-         $campaign_id,
-         $comment_post_id,
-         'published'
-      ),
-      ARRAY_A
-   );
-
-   if (!$campaign) {
-      return;
-   }
-
-   // All conditions satisfied: increment the count
-   $current_count = isset($campaign_item['count']) && is_numeric($campaign_item['count'])
-      ? (int) $campaign_item['count']
-      : 0;
-
-   $wpdb->update(
-      $campaign_item_table,
-      ['count' => $current_count + 1],
-      ['reference' => $reference],
-      ['%d'],
-      ['%s']
+      )
    );
 }
+
+require_once QR_PLUGIN_DIR . 'includes/actions/reference-service.php';
