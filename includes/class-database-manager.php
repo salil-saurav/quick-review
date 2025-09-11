@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Class DatabaseManager
+ * Class QRDatabaseManager
  *
  * Handles the initialization and management of review-related database tables for the Quick Review plugin.
  *
@@ -21,7 +21,7 @@
  * Instantiate this class to ensure the necessary tables for campaign and review management are present in the database.
  */
 
-class DatabaseManager
+class QRDatabaseManager
 {
    /**
     * Initialize the class and set up the database
@@ -40,8 +40,8 @@ class DatabaseManager
    {
       global $wpdb;
 
-      $campaign_table_name = $wpdb->prefix . QR_REVIEW_CAMPAIGN;
-      $campaign_item_table   = $wpdb->prefix . QR_REVIEW_CAMPAIGN_ITEM;
+      $campaign_table_name = $wpdb->prefix . QR_CAMPAIGN;
+      $campaign_item_table = $wpdb->prefix . QR_CAMPAIGN_ITEM;
 
       // Check if both tables exist
       if ($this->tables_exist([$campaign_table_name, $campaign_item_table])) {
@@ -92,7 +92,7 @@ class DatabaseManager
          post_id INT NOT NULL,
          created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
          PRIMARY KEY (id)
-    ) $charset_collate;";
+      ) $charset_collate;";
 
       require_once ABSPATH . 'wp-admin/includes/upgrade.php';
       dbDelta($sql);
@@ -115,7 +115,7 @@ class DatabaseManager
       global $wpdb;
 
       $charset_collate = $wpdb->get_charset_collate();
-      $campaign_table_name = $wpdb->prefix . QR_REVIEW_CAMPAIGN;
+      $campaign_table_name = $wpdb->prefix . QR_CAMPAIGN;
 
       $sql = "CREATE TABLE `$table_name` (
          reference VARCHAR(36) NOT NULL,

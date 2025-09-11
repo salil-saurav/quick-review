@@ -21,8 +21,8 @@
  *
  * Database Tables:
  * - QR_SETTINGS_TABLE: Stores plugin settings (option_name, option_value).
- * - QR_REVIEW_CAMPAIGN_ITEM: Stores campaign items (reference, count, campaign_id).
- * - QR_REVIEW_CAMPAIGN: Stores campaigns (id, post_id, end_date, status).
+ * - QR_CAMPAIGN_ITEM: Stores campaign items (reference, count, campaign_id).
+ * - QR_CAMPAIGN: Stores campaigns (id, post_id, end_date, status).
  *
  * Security:
  * - Uses nonce verification for form submissions.
@@ -41,6 +41,12 @@ add_action('admin_init', function () {
       }
    }
 });
+
+/**
+ * Actions
+ */
+add_action('wp_set_comment_status', 'qr_handle_comment_status_change', 10, 2);
+add_action('delete_comment', 'qr_handle_comment_deletion');
 
 // Handle activation form submission
 add_action('admin_init', function () {
@@ -89,37 +95,30 @@ function create_or_update_qr_settings($data = [])
 }
 
 
-/**
- * Handle comment status changes for reference-based reviews.
- */
-add_action('wp_set_comment_status', 'qr_handle_comment_status_change', 10, 2);
+
+
 function qr_handle_comment_status_change($comment_id, $comment_status)
 {
    global $wpdb;
 
-   error_log("qr_handle_comment_status_change: Called for comment_id={$comment_id}, status={$comment_status}");
-
    $reference = get_comment_meta($comment_id, 'reference', true);
-   error_log("qr_handle_comment_status_change: Reference meta = " . print_r($reference, true));
    if (empty($reference)) {
       error_log("qr_handle_comment_status_change: No reference found, aborting.");
       return;
    }
 
-   $campaign_item_table = $wpdb->prefix . QR_REVIEW_CAMPAIGN_ITEM;
-   $campaign_table      = $wpdb->prefix . QR_REVIEW_CAMPAIGN;
+   $campaign_item_table = $wpdb->prefix . QR_CAMPAIGN_ITEM;
+   $campaign_table      = $wpdb->prefix . QR_CAMPAIGN;
    $comment             = get_comment($comment_id);
    $comment_post_id     = $comment ? $comment->comment_post_ID : 0;
-
-   error_log("qr_handle_comment_status_change: campaign_item_table={$campaign_item_table}, campaign_table={$campaign_table}, comment_post_id={$comment_post_id}");
 
    // Validate campaign
    $campaign_item = $wpdb->get_row(
       $wpdb->prepare(
          "SELECT ci.reference, ci.count, ci.campaign_id, c.start_date, c.end_date, c.post_id
-       FROM $campaign_item_table ci
-       INNER JOIN $campaign_table c ON ci.campaign_id = c.id
-       WHERE ci.reference = %s
+         FROM $campaign_item_table ci
+         INNER JOIN $campaign_table c ON ci.campaign_id = c.id
+         WHERE ci.reference = %s
          AND c.post_id = %d
          AND (c.start_date IS NULL OR c.start_date <= NOW())
          AND (c.end_date IS NULL OR c.end_date >= NOW())",
@@ -128,9 +127,6 @@ function qr_handle_comment_status_change($comment_id, $comment_status)
       ),
       ARRAY_A
    );
-
-
-   error_log("qr_handle_comment_status_change: campaign_item = " . print_r($campaign_item, true));
 
    if (!$campaign_item) {
       error_log("qr_handle_comment_status_change: No valid campaign item found, aborting.");
@@ -142,31 +138,28 @@ function qr_handle_comment_status_change($comment_id, $comment_status)
       $result = $wpdb->query(
          $wpdb->prepare(
             "UPDATE $campaign_item_table
-                 SET `count` = COALESCE(`count`, 0) + 1
-                 WHERE reference = %s",
+               SET `count` = COALESCE(`count`, 0) + 1
+               WHERE reference = %s",
             $reference
          )
       );
-      error_log("qr_handle_comment_status_change: Incremented count for reference={$reference}, result={$result}");
    }
    // If changed from approved → something else → decrement
    else {
       $result = $wpdb->query(
          $wpdb->prepare(
             "UPDATE $campaign_item_table
-                 SET `count` = GREATEST(COALESCE(`count`, 0) - 1, 0)
-                 WHERE reference = %s",
+               SET `count` = GREATEST(COALESCE(`count`, 0) - 1, 0)
+               WHERE reference = %s",
             $reference
          )
       );
-      error_log("qr_handle_comment_status_change: Decremented count for reference={$reference}, result={$result}");
    }
 }
 
 /**
  * Handle comment deletion → decrement if approved.
  */
-add_action('delete_comment', 'qr_handle_comment_deletion');
 function qr_handle_comment_deletion($comment_id)
 {
    global $wpdb;
@@ -181,13 +174,13 @@ function qr_handle_comment_deletion($comment_id)
       return;
    }
 
-   $campaign_item_table = $wpdb->prefix . QR_REVIEW_CAMPAIGN_ITEM;
+   $campaign_item_table = $wpdb->prefix . QR_CAMPAIGN_ITEM;
 
    $wpdb->query(
       $wpdb->prepare(
          "UPDATE $campaign_item_table
-             SET `count` = GREATEST(COALESCE(`count`, 0) - 1, 0)
-             WHERE reference = %s",
+            SET `count` = GREATEST(COALESCE(`count`, 0) - 1, 0)
+            WHERE reference = %s",
          $reference
       )
    );

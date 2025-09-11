@@ -22,9 +22,9 @@ require_once plugin_dir_path(__FILE__) . 'class-database-manager.php';
  * @method bool is_plugin_page() Determines if current page is a plugin-related admin page.
  * @method void register_admin_menu() Registers admin menu and submenus for the plugin.
  * @method void conditionally_add_screen_options(WP_Screen $screen) Adds screen options for specific plugin pages.
- * @method void render_admin_page() Renders the main admin page template.
- * @method void render_campaign_item() Renders the campaign dashboard template.
- * @method void render_setup_wizard() Renders the setup wizard template.
+ * @method void qr_render_admin_page() Renders the main admin page template.
+ * @method void qr_render_campaign_item() Renders the campaign dashboard template.
+ * @method void qr_render_setup_wizard() Renders the setup wizard template.
  * @method void render_logs() Renders the logs page template.
  * @method void handle_screen_options() Handles screen options and redirects for admin pages.
  * @method mixed save_screen_option($status, $option, $value) Saves custom screen option values.
@@ -45,7 +45,7 @@ class Quick_Review
       if (is_admin()) {
          update_option('qrs_do_activation_redirect', true);
       }
-      new DatabaseManager();
+      new QRDatabaseManager();
    }
 
    public static function deactivate(): void
@@ -68,15 +68,15 @@ class Quick_Review
 
    private function init_hooks(): void
    {
-      add_action('admin_enqueue_scripts', [$this, 'enqueue_scripts']);
-      add_action('admin_menu', [$this, 'register_admin_menu']);
-      add_action('load-toplevel_page_quick-review', [$this, 'handle_screen_options']);
-      add_action('current_screen', [$this, 'conditionally_add_screen_options']);
+      add_action('admin_enqueue_scripts', [$this, 'qr_enqueue_scripts']);
+      add_action('admin_menu', [$this, 'qr_register_admin_menu']);
+      add_action('load-toplevel_page_quick-review', [$this, 'qr_handle_screen_options']);
+      add_action('current_screen', [$this, 'qr_conditionally_add_screen_options']);
 
-      add_filter('set-screen-option', [$this, 'save_screen_option'], 10, 3);
+      add_filter('set-screen-option', [$this, 'qr_save_screen_option'], 10, 3);
    }
 
-   public function enqueue_scripts(): void
+   public function qr_enqueue_scripts(): void
    {
       if (!$this->is_plugin_page()) {
          return;
@@ -112,14 +112,14 @@ class Quick_Review
       return is_singular() && isset($post->post_content) && has_shortcode($post->post_content, 'quick_review');
    }
 
-   public function register_admin_menu(): void
+   public function qr_register_admin_menu(): void
    {
       add_menu_page(
          __('Quick Review', 'quick-review'),
          __('Quick Review', 'quick-review'),
          'manage_options',
          'quick-review',
-         [$this, 'render_admin_page'],
+         [$this, 'qr_render_admin_page'],
          'dashicons-star-filled',
          80
       );
@@ -130,7 +130,7 @@ class Quick_Review
          'Campaign Item',
          'manage_options',
          'campaign-dashboard',
-         [$this, 'render_campaign_item']
+         [$this, 'qr_render_campaign_item']
       );
 
       add_submenu_page(
@@ -139,11 +139,11 @@ class Quick_Review
          __('Setup Wizard', 'quick-review'),
          'manage_options',
          'qrs-setup-wizard',
-         [$this, 'render_setup_wizard']
+         [$this, 'qr_render_setup_wizard']
       );
    }
 
-   public function conditionally_add_screen_options(WP_Screen $screen): void
+   public function qr_conditionally_add_screen_options(WP_Screen $screen): void
    {
       if (isset($_GET['page']) && $_GET['page'] === 'campaign-dashboard') {
          add_screen_option('per_page', [
@@ -154,22 +154,22 @@ class Quick_Review
       }
    }
 
-   public function render_admin_page(): void
+   public function qr_render_admin_page(): void
    {
       include QR_PLUGIN_DIR . 'templates/admin-page.php';
    }
 
-   public function render_campaign_item(): void
+   public function qr_render_campaign_item(): void
    {
       include QR_PLUGIN_DIR . 'templates/campaign-item-dashboard.php';
    }
 
-   public function render_setup_wizard(): void
+   public function qr_render_setup_wizard(): void
    {
       include QR_PLUGIN_DIR . 'templates/setup-wizard.php';
    }
 
-   public function handle_screen_options(): void
+   public function qr_handle_screen_options(): void
    {
       // Optional redirect to ?paged=1 if not set
       if (!isset($_GET['paged'])) {
@@ -187,7 +187,7 @@ class Quick_Review
          'option'  => 'quick_review_per_page',
       ]);
    }
-   public function save_screen_option($status, $option, $value)
+   public function qr_save_screen_option($status, $option, $value)
    {
       $supported_options = [
          'quick_review_per_page',
@@ -197,7 +197,6 @@ class Quick_Review
       if (in_array($option, $supported_options, true)) {
          return (int) $value;
       }
-
       return $status;
    }
 }

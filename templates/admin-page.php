@@ -7,34 +7,34 @@ if (!current_user_can('manage_options')) {
    wp_die(__('You do not have sufficient permissions to access this page.'));
 }
 /**
- * Class QuickReviewAdminPage
+ * Class QRQuickReviewAdminPage
  * Handles the admin page functionality for Quick Review plugin
  */
-class CampaignDashboard
+class QRCampaignDashboard
 {
    /**
     * Initialize the admin page
     */
    public function __construct()
    {
-      $this->render_page();
+      $this->qr_render_page();
    }
 
    /**
     * Render the admin page content
     */
-   public function render_page()
+   public function qr_render_page()
    {
 ?>
       <div class="wrap review-wrap">
          <?php
 
-         $posts = get_post_count();
+         $posts = qr_get_post_count();
 
          if (strlen($posts[0]) > 0 && count($posts) >= 1) {
-            $this->render_content();
+            $this->qr_render_content();
          } else {
-            $this->render_error_page();
+            $this->qr_render_error_page();
          }
          ?>
       </div>
@@ -44,16 +44,16 @@ class CampaignDashboard
    /**
     * Render the main content of the admin page
     */
-   private function render_content()
+   private function qr_render_content()
    {
       require_once __DIR__ . '/campaign-dashboard.php';
    }
 
-   private function render_error_page()
+   private function qr_render_error_page()
    {
       require_once __DIR__ . '/error-page.php';
    }
 }
 
 // Initialize the admin page
-new CampaignDashboard();
+new QRCampaignDashboard();

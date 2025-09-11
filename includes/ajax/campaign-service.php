@@ -27,8 +27,8 @@ class CampaignService
    {
       global $wpdb;
 
-      $this->campaign_table = $wpdb->prefix . QR_REVIEW_CAMPAIGN;
-      $this->campaign_item_table = $wpdb->prefix . QR_REVIEW_CAMPAIGN_ITEM;
+      $this->campaign_table = $wpdb->prefix . QR_CAMPAIGN;
+      $this->campaign_item_table = $wpdb->prefix . QR_CAMPAIGN_ITEM;
 
       $this->register_hooks();
    }
@@ -42,11 +42,11 @@ class CampaignService
          return;
       }
 
-      add_action('wp_ajax_create_campaign', [$this, 'handle_create_campaign']);
-      add_action('wp_ajax_autofill_campaign', [$this, 'handle_autofill']);
-      add_action('wp_ajax_delete_campaign', [$this, 'handle_delete_campaign']);
+      add_action('wp_ajax_create_campaign', [$this, 'qr_handle_create_campaign']);
+      add_action('wp_ajax_autofill_campaign', [$this, 'qr_handle_autofill']);
+      add_action('wp_ajax_delete_campaign', [$this, 'qr_handle_delete_campaign']);
 
-      add_action('qr_create_campaign', [__CLASS__, 'handle_external_create_campaign_static'], 10, 1);
+      add_action('qr_create_campaign', [__CLASS__, 'qr_handle_external_create_campaign_static'], 10, 1);
 
       self::$hooks_registered = true;
    }
@@ -54,7 +54,7 @@ class CampaignService
    /**
     * Handle the AJAX request for creating a review link
     */
-   public function handle_create_campaign(): void
+   public function qr_handle_create_campaign(): void
    {
       try {
          $this->verify_request();
@@ -75,7 +75,7 @@ class CampaignService
       }
    }
 
-   public function handle_autofill()
+   public function qr_handle_autofill()
    {
       try {
 
@@ -264,7 +264,7 @@ class CampaignService
     *   post_id: int
     * } $args
     */
-   public static function handle_external_create_campaign_static(array $args): void
+   public static function qr_handle_external_create_campaign_static(array $args): void
    {
       try {
          $campaign_id = self::create($args);
@@ -315,7 +315,7 @@ class CampaignService
    private static function campaign_exists(array $data): ?int
    {
       global $wpdb;
-      $campaign_table = $wpdb->prefix . QR_REVIEW_CAMPAIGN;
+      $campaign_table = $wpdb->prefix . QR_CAMPAIGN;
 
       $existing = $wpdb->get_var($wpdb->prepare(
          "SELECT id FROM {$campaign_table}
@@ -339,7 +339,7 @@ class CampaignService
    {
       global $wpdb;
 
-      $campaign_table = $wpdb->prefix . QR_REVIEW_CAMPAIGN;
+      $campaign_table = $wpdb->prefix . QR_CAMPAIGN;
       $is_update = !empty($data['campaign_id']);
 
       $payload = [
@@ -410,7 +410,7 @@ class CampaignService
       }
    }
 
-   public function handle_delete_campaign()
+   public function qr_handle_delete_campaign()
    {
       global $wpdb;
 
@@ -420,7 +420,7 @@ class CampaignService
          wp_send_json_error(['message' => 'Missing Campaign ID.']);
       }
 
-      $campaign_table = $wpdb->prefix . QR_REVIEW_CAMPAIGN;
+      $campaign_table = $wpdb->prefix . QR_CAMPAIGN;
 
       // Perform deletion
       $deleted = $wpdb->delete(
