@@ -10,7 +10,7 @@ $items_per_page = $per_page; // Number of items per page
 $current_page   = isset($_GET['paged']) ? max(1, intval($_GET['paged'])) : 1;
 $start_date     = isset($_POST['start_date']) ? max(1, intval($_POST['start_date'])) : 1;
 $end_date       = isset($_POST['end_date']) ? max(1, intval($_POST['end_date'])) : 1;
-$total_items    = get_total_count(true, QR_REVIEW_CAMPAIGN);
+$total_items    = get_total_count(true, QR_CAMPAIGN);
 
 $page_data['items_per_page'] = $items_per_page;
 $page_data['current_page']   =  $current_page;
@@ -39,8 +39,8 @@ $page_data['current_page']   =  $current_page;
             <th>Remove</th>
          </tr>
       </thead>
-      <tbody class="review-list" data-total="<?= get_total_count(false, QR_REVIEW_CAMPAIGN) ?>">
-         <?php render_table($page_data, QR_REVIEW_CAMPAIGN, false); ?>
+      <tbody class="review-list" data-total="<?= get_total_count(false, QR_CAMPAIGN) ?>">
+         <?php render_table($page_data, QR_CAMPAIGN, false); ?>
       </tbody>
    </table>
 

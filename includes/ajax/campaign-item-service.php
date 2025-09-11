@@ -30,8 +30,8 @@ class CampaignItemService
    {
       global $wpdb;
 
-      $this->campaign_table = $wpdb->prefix . QR_REVIEW_CAMPAIGN;
-      $this->campaign_item_table = $wpdb->prefix . QR_REVIEW_CAMPAIGN_ITEM;
+      $this->campaign_table = $wpdb->prefix . QR_CAMPAIGN;
+      $this->campaign_item_table = $wpdb->prefix . QR_CAMPAIGN_ITEM;
 
       $this->register_hooks();
    }
@@ -45,9 +45,9 @@ class CampaignItemService
          return;
       }
 
-      add_action('wp_ajax_create_campaign_item', [$this, 'handle_create_campaign_item']);
-      add_action('wp_ajax_delete_campaign_item', [$this, 'handle_delete_campaign_item']);
-      add_action('qr_create_campaign_item', [__CLASS__, 'handle_external_create_campaign_item'], 10, 1);
+      add_action('wp_ajax_create_campaign_item', [$this, 'qr_handle_create_campaign_item']);
+      add_action('wp_ajax_delete_campaign_item', [$this, 'qr_handle_delete_campaign_item']);
+      add_action('qr_create_campaign_item', [__CLASS__, 'qr_handle_external_create_campaign_item'], 10, 1);
 
       self::$hooks_registered = true;
    }
@@ -55,21 +55,15 @@ class CampaignItemService
    /**
     * Handle AJAX request for creating a campaign item
     */
-   public function handle_create_campaign_item(): void
+   public function qr_handle_create_campaign_item(): void
    {
       try {
          $this->verify_permissions();
-<<<<<<< HEAD
 
          $post_id     = $this->validate_post_id($_POST['post_id'] ?? 0);
          $name        = sanitize_text_field($_POST['name'] ?? '');
          $campaign_id = $this->resolve_campaign_id($post_id, false);
          $result      = $this->create_campaign_item($post_id, $campaign_id, $name);
-=======
-         $post_id = $this->validate_post_id($_POST['post_id'] ?? 0);
-
-         $result = $this->create_campaign_item($post_id);
->>>>>>> 008af625cf900e06f92369b07461a6ab1eb2bc42
 
          wp_send_json_success([
             'message' => 'Campaign item created successfully',
@@ -86,7 +80,7 @@ class CampaignItemService
    /**
     * Handle AJAX request for deleting a campaign item
     */
-   public function handle_delete_campaign_item(): void
+   public function qr_handle_delete_campaign_item(): void
    {
       try {
          $this->verify_permissions();
@@ -114,10 +108,9 @@ class CampaignItemService
     * }
     * @return string|WP_Error The review reference UUID or WP_Error on failure
     */
-   public static function handle_external_create_campaign_item(array $args)
+   public static function qr_handle_external_create_campaign_item(array $args)
    {
       try {
-<<<<<<< HEAD
          $instance    = new self();
 
          $post_id     = $instance->validate_post_id($args['post_id'] ?? 0);
@@ -125,13 +118,6 @@ class CampaignItemService
          $name        = sanitize_text_field($args['name'] ?? '');
 
          $result      = $instance->create_campaign_item($post_id, $campaign_id, $name);
-=======
-         $instance = new self();
-         $post_id = $instance->validate_post_id($args['post_id'] ?? 0);
-         $campaign_id = (int) ($args['campaign_id'] ?? 0);
-
-         $result = $instance->create_campaign_item($post_id, $campaign_id);
->>>>>>> 008af625cf900e06f92369b07461a6ab1eb2bc42
 
          do_action('qr_after_campaign_item_created', $result, $args);
 
@@ -153,20 +139,12 @@ class CampaignItemService
     * @param int $campaign_id Optional specific campaign ID
     * @return string|WP_Error The review reference UUID or WP_Error on failure
     */
-<<<<<<< HEAD
    public static function create_for_post(int $post_id, int $campaign_id = 0, string $name = '')
    {
       return self::handle_external_create_campaign_item([
          'post_id'     => $post_id,
          'campaign_id' => $campaign_id,
          'name'        => $name
-=======
-   public static function create_for_post(int $post_id, int $campaign_id = 0)
-   {
-      return self::handle_external_create_campaign_item([
-         'post_id' => $post_id,
-         'campaign_id' => $campaign_id
->>>>>>> 008af625cf900e06f92369b07461a6ab1eb2bc42
       ]);
    }
 
@@ -178,7 +156,6 @@ class CampaignItemService
     * @return array{reference: string, review_url: string, campaign_id: int}
     * @throws Exception
     */
-<<<<<<< HEAD
    private function create_campaign_item(int $post_id, int $campaign_id = 0, string $name = ''): array
    {
       $campaign_id = $this->resolve_campaign_id($post_id, $campaign_id);
@@ -193,21 +170,6 @@ class CampaignItemService
          'review_url'  => $review_url,
          'campaign_id' => $campaign_id,
          'name'        => $name
-=======
-   private function create_campaign_item(int $post_id, int $campaign_id = 0): array
-   {
-      $campaign_id = $this->resolve_campaign_id($post_id, $campaign_id);
-      $permalink = $this->get_post_permalink($post_id);
-      $uuid = $this->generate_unique_reference();
-      $review_url = $this->build_review_url($permalink, $uuid, $post_id);
-
-      $this->insert_campaign_item($uuid, $campaign_id);
-
-      return [
-         'reference' => $uuid,
-         'review_url' => $review_url,
-         'campaign_id' => $campaign_id
->>>>>>> 008af625cf900e06f92369b07461a6ab1eb2bc42
       ];
    }
 
@@ -414,18 +376,13 @@ class CampaignItemService
     * @param int $campaign_id The campaign ID
     * @throws Exception
     */
-<<<<<<< HEAD
    private function insert_campaign_item(string $uuid, int $campaign_id, string $name): void
-=======
-   private function insert_campaign_item(string $uuid, int $campaign_id): void
->>>>>>> 008af625cf900e06f92369b07461a6ab1eb2bc42
    {
       global $wpdb;
 
       $inserted = $wpdb->insert(
          $this->campaign_item_table,
          [
-<<<<<<< HEAD
             'reference'   => $uuid,
             'name'        => $name,
             'campaign_id' => $campaign_id,
@@ -433,14 +390,6 @@ class CampaignItemService
             'status'      => self::STATUS_ACTIVE
          ],
          ['%s', '%s', '%d', '%s', '%s']
-=======
-            'reference' => $uuid,
-            'campaign_id' => $campaign_id,
-            'created_at' => current_time('mysql'),
-            'status' => self::STATUS_ACTIVE
-         ],
-         ['%s', '%d', '%s', '%s']
->>>>>>> 008af625cf900e06f92369b07461a6ab1eb2bc42
       );
 
       if ($inserted === false) {
@@ -481,7 +430,7 @@ class CampaignItemService
    {
       global $wpdb;
 
-      $table_name = $wpdb->prefix . QR_REVIEW_CAMPAIGN_ITEM;
+      $table_name = $wpdb->prefix . QR_CAMPAIGN_ITEM;
 
       for ($attempt = 1; $attempt <= $max_attempts; $attempt++) {
          $uuid = self::generate_static_uuid_v4();

@@ -27,8 +27,8 @@ class CampaignService
    {
       global $wpdb;
 
-      $this->campaign_table = $wpdb->prefix . QR_REVIEW_CAMPAIGN;
-      $this->campaign_item_table = $wpdb->prefix . QR_REVIEW_CAMPAIGN_ITEM;
+      $this->campaign_table = $wpdb->prefix . QR_CAMPAIGN;
+      $this->campaign_item_table = $wpdb->prefix . QR_CAMPAIGN_ITEM;
 
       $this->register_hooks();
    }
@@ -315,7 +315,7 @@ class CampaignService
    private static function campaign_exists(array $data): ?int
    {
       global $wpdb;
-      $campaign_table = $wpdb->prefix . QR_REVIEW_CAMPAIGN;
+      $campaign_table = $wpdb->prefix . QR_CAMPAIGN;
 
       $existing = $wpdb->get_var($wpdb->prepare(
          "SELECT id FROM {$campaign_table}
@@ -339,7 +339,7 @@ class CampaignService
    {
       global $wpdb;
 
-      $campaign_table = $wpdb->prefix . QR_REVIEW_CAMPAIGN;
+      $campaign_table = $wpdb->prefix . QR_CAMPAIGN;
       $is_update = !empty($data['campaign_id']);
 
       $payload = [
@@ -420,7 +420,7 @@ class CampaignService
          wp_send_json_error(['message' => 'Missing Campaign ID.']);
       }
 
-      $campaign_table = $wpdb->prefix . QR_REVIEW_CAMPAIGN;
+      $campaign_table = $wpdb->prefix . QR_CAMPAIGN;
 
       // Perform deletion
       $deleted = $wpdb->delete(

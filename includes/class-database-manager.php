@@ -40,8 +40,8 @@ class DatabaseManager
    {
       global $wpdb;
 
-      $campaign_table_name = $wpdb->prefix . QR_REVIEW_CAMPAIGN;
-      $campaign_item_table   = $wpdb->prefix . QR_REVIEW_CAMPAIGN_ITEM;
+      $campaign_table_name = $wpdb->prefix . QR_CAMPAIGN;
+      $campaign_item_table   = $wpdb->prefix . QR_CAMPAIGN_ITEM;
 
       // Check if both tables exist
       if ($this->tables_exist([$campaign_table_name, $campaign_item_table])) {
@@ -115,7 +115,7 @@ class DatabaseManager
       global $wpdb;
 
       $charset_collate = $wpdb->get_charset_collate();
-      $campaign_table_name = $wpdb->prefix . QR_REVIEW_CAMPAIGN;
+      $campaign_table_name = $wpdb->prefix . QR_CAMPAIGN;
 
       $sql = "CREATE TABLE `$table_name` (
          reference VARCHAR(36) NOT NULL,

@@ -10,7 +10,7 @@ function review_url_count($campaign_id)
 {
    global $wpdb;
 
-   $review_table = $wpdb->prefix . QR_REVIEW_CAMPAIGN_ITEM;
+   $review_table = $wpdb->prefix . QR_CAMPAIGN_ITEM;
 
    $total_count = $wpdb->get_var(
       $wpdb->prepare(
@@ -33,7 +33,7 @@ function review_url_count($campaign_id)
 function render_single_data($column, $count, $table_name, $post_id = false)
 {
    // Build table row
-   if ($table_name === QR_REVIEW_CAMPAIGN) {
+   if ($table_name === QR_CAMPAIGN) {
 
       $row = [
          's_no'           => $count,
@@ -158,7 +158,7 @@ function render_table($page_data, $table_name, $post_id = false)
 
    // Filter by campaign_id from post_id
    if ($post_id) {
-      $campaign_table = $wpdb->prefix . QR_REVIEW_CAMPAIGN;
+      $campaign_table = $wpdb->prefix . QR_CAMPAIGN;
       $campaign_id = $wpdb->get_var($wpdb->prepare(
          "SELECT id FROM $campaign_table WHERE post_id = %d",
          $post_id
@@ -256,7 +256,7 @@ function get_total_count($include_dates, $table_name, $post_id = false)
    }
 
    if ($post_id) {
-      $campaign_table = $wpdb->prefix . QR_REVIEW_CAMPAIGN;
+      $campaign_table = $wpdb->prefix . QR_CAMPAIGN;
 
       $campaign_id = $wpdb->get_var($wpdb->prepare(
          "SELECT id FROM $campaign_table WHERE post_id = %d",
