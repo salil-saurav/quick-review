@@ -27,7 +27,7 @@ do_action('qr_create_campaign_item', [
 
 ```php
 // Create a campaign item using the static method
-$result = \QuickReview\CampaignItemService::create_for_post(123, 456);
+$result = \QuickReview\CampaignItemService::qr_create_for_post(123, 456);
 
 if (is_wp_error($result)) {
     // Handle error
@@ -40,7 +40,7 @@ if (is_wp_error($result)) {
 
 ## Available Filters
 
-### `modify_campaign_item`
+### `qr_modify_campaign_item`
 
 Allows modification of the final review URL before it's stored in the database.
 
@@ -53,7 +53,7 @@ Allows modification of the final review URL before it's stored in the database.
 **Example:**
 
 ```php
-add_filter('modify_campaign_item', function($review_url, $uuid, $post_id) {
+add_filter('qr_modify_campaign_item', function($review_url, $uuid, $post_id) {
     // Add custom tracking parameters
     $review_url = add_query_arg([
         'utm_source' => 'review_campaign',
@@ -113,92 +113,11 @@ add_action('qr_after_campaign_item_created', function($result, $args) {
 }, 10, 2);
 ```
 
-## Helper Methods
-
-### `CampaignItemService::create_for_post()`
-
-A convenient static method for creating campaign items.
-
-```php
-/**
- * @param int $post_id The post ID
- * @param int $campaign_id Optional specific campaign ID
- * @return string|WP_Error The reference UUID or WP_Error on failure
- */
-$result = \QuickReview\CampaignItemService::create_for_post($post_id, $campaign_id);
-```
-
-## Error Handling
-
-The service returns `WP_Error` objects for various failure scenarios:
-
-```php
-$result = \QuickReview\CampaignItemService::create_for_post(123);
-
-if (is_wp_error($result)) {
-    $error_code = $result->get_error_code();
-    $error_message = $result->get_error_message();
-
-    switch ($error_code) {
-        case 'invalid_post':
-            // Handle invalid post ID
-            break;
-        case 'campaign_item_creation_failed':
-            // Handle creation failure
-            break;
-        default:
-            // Handle other errors
-            break;
-    }
-}
-```
-
-## Examples
-
-### Example 1: Auto-create Review URLs for New Products
-
-```php
-// Auto-create review URLs when a new product is published
-add_action('transition_post_status', function($new_status, $old_status, $post) {
-    if ($new_status === 'publish' && $old_status !== 'publish' && $post->post_type === 'product') {
-        do_action('qr_create_campaign_item', ['post_id' => $post->ID]);
-    }
-}, 10, 3);
-```
-
-### Example 2: Bulk Create Review URLs
-
-```php
-function create_review_urls_for_category($category_id) {
-    $posts = get_posts([
-        'category' => $category_id,
-        'numberposts' => -1,
-        'post_status' => 'publish'
-    ]);
-
-    $results = [];
-
-    foreach ($posts as $post) {
-        $result = \QuickReview\CampaignItemService::create_for_post($post->ID);
-
-        if (!is_wp_error($result)) {
-            $results[] = [
-                'post_id' => $post->ID,
-                'post_title' => $post->post_title,
-                'reference' => $result
-            ];
-        }
-    }
-
-    return $results;
-}
-```
-
 ### Example 3: Custom Review URL Structure
 
 ```php
 // Modify review URLs to use a subdomain
-add_filter('modify_campaign_item', function($review_url, $uuid, $post_id) {
+add_filter('qr_modify_campaign_item', function($review_url, $uuid, $post_id) {
     // Parse the original URL
     $parsed_url = parse_url($review_url);
 
@@ -228,3 +147,101 @@ The service works with two main tables:
 -   `wp_qr_review_campaign_item`: Stores individual review URLs/items
 
 Make sure these tables exist in your database before using the service.
+
+Two filters are exposed:
+
+-   `qr_get_campaigns_by_post_ids`
+-   `qr_get_campaign_items_by_campaign_id`
+
+Both filters return results directly from the database, with support for pagination, filtering, and error handling.
+
+---
+
+## 1. Fetch Campaigns by Post IDs
+
+**Hook:**
+
+```php
+apply_filters('qr_get_campaigns_by_post_ids', $post_ids, $options);
+
+/*
+Parameters
+$post_ids (array, required)
+Array of WordPress post IDs linked to campaigns.
+
+$options (array, optional)
+Available keys:
+
+page (int) – Page number (default: 1)
+per_page (int) – Number of results per page (default: 10)
+offset (int|null) – Manual offset (overrides page)
+start_date (string) – Filter by start date (Y-m-d)
+end_date (string) – Filter by end date (Y-m-d)
+status (string) – Campaign status filter
+order_by (string) – Allowed: id, campaign_name, post_id, status, created_at, updated_at, start_date, end_date
+order (string) – ASC or DESC (default: DESC)
+count_only (bool) – Return total count instead of results (default: false)
+*/
+
+$post_ids = [101, 102, 103];
+$options = [
+    'per_page'   => 5,
+    'order_by'   => 'campaign_name',
+    'order'      => 'ASC',
+    'status'     => 'active'
+];
+
+$campaigns = apply_filters('qr_get_campaigns_by_post_ids', $post_ids, $options);
+
+if (is_wp_error($campaigns)) {
+    error_log('Error: ' . $campaigns->get_error_message());
+} else {
+    echo '<pre>';
+    print_r($campaigns);
+    echo '</pre>';
+}
+```
+
+## Fetch Campaign Items by Campaign ID
+
+```php
+
+apply_filters('qr_get_campaign_items_by_campaign_id', $campaign_id, $options);
+/*
+Parameters
+$campaign_id (int, required)
+ID of the campaign.
+
+$options (array, optional)
+Available keys:
+
+page (int) – Page number (default: 1)
+per_page (int) – Number of results per page (default: 10)
+offset (int|null) – Manual offset (overrides page)
+status (string) – Item status filter
+start_date (string) – Start date filter (Y-m-d)
+end_date (string) – End date filter (Y-m-d)
+order_by (string) – Allowed: id, reference, campaign_id, status, created_at, count
+order (string) – ASC or DESC (default: DESC)
+count_only (bool) – Return only count (default: false)
+include_stats (bool) – Include usage stats (count column)
+*/
+
+$campaign_id = 25;
+$options = [
+    'per_page'      => 10,
+    'order_by'      => 'created_at',
+    'order'         => 'DESC',
+    'include_stats' => true
+];
+
+$items = apply_filters('qr_get_campaign_items_by_campaign_id', $campaign_id, $options);
+
+if (is_wp_error($items)) {
+    error_log('Error: ' . $items->get_error_message());
+} else {
+    echo '<pre>';
+    print_r($items);
+    echo '</pre>';
+}
+```

@@ -64,7 +64,7 @@ class ReferenceService
 
          if ($campaign_data) {
             // Save meta
-            $this->save_reference_to_comment($comment_id, $reference, $campaign_data);
+            $this->save_reference_to_comment($comment_id, $reference);
 
             // If already approved → increment immediately
             if ($comment->comment_approved === '1') {
@@ -82,11 +82,9 @@ class ReferenceService
    /**
     * Save reference + campaign data in comment meta
     */
-   private function save_reference_to_comment(int $comment_id, string $reference, array $campaign_data): void
+   private function save_reference_to_comment(int $comment_id, string $reference): void
    {
       update_comment_meta($comment_id, 'reference', $reference);
-      update_comment_meta($comment_id, 'qr_campaign_id', $campaign_data['campaign_id']);
-      update_comment_meta($comment_id, 'qr_campaign_name', $campaign_data['campaign_name']);
       update_comment_meta($comment_id, 'qr_reference_created_at', current_time('mysql'));
    }
 
@@ -141,10 +139,10 @@ class ReferenceService
       $wpdb->query(
          $wpdb->prepare(
             "UPDATE {$this->campaign_item_table}
-             SET `count` = COALESCE(`count`, 0) + 1,
+               SET `count` = COALESCE(`count`, 0) + 1,
                   usage_count = COALESCE(usage_count, 0) + 1,
                   used_at = %s
-             WHERE reference = %s",
+               WHERE reference = %s",
             current_time('mysql'),
             $reference
          )
@@ -238,8 +236,6 @@ class ReferenceService
 
       return [
          'reference'      => $reference,
-         'campaign_id'    => get_comment_meta($comment_id, 'qr_campaign_id', true),
-         'campaign_name'  => get_comment_meta($comment_id, 'qr_campaign_name', true),
          'created_at'     => get_comment_meta($comment_id, 'qr_reference_created_at', true),
       ];
    }

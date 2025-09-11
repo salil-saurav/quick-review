@@ -49,6 +49,11 @@ class CampaignItemService
       add_action('wp_ajax_delete_campaign_item', [$this, 'qr_handle_delete_campaign_item']);
       add_action('qr_create_campaign_item', [__CLASS__, 'qr_handle_external_create_campaign_item'], 10, 1);
 
+      // Actions
+
+      add_filter('qr_get_campaigns_by_post_ids', [$this, 'qr_get_campaigns_by_post_ids'], 10, 2);
+      add_filter('qr_get_campaign_items_by_campaign_id', [$this, 'qr_get_campaign_items_by_campaign_id'], 10, 2);
+
       self::$hooks_registered = true;
    }
 
@@ -139,7 +144,7 @@ class CampaignItemService
     * @param int $campaign_id Optional specific campaign ID
     * @return string|WP_Error The review reference UUID or WP_Error on failure
     */
-   public static function create_for_post(int $post_id, int $campaign_id = 0, string $name = '')
+   public static function qr_create_for_post(int $post_id, int $campaign_id = 0, string $name = '')
    {
       return self::handle_external_create_campaign_item([
          'post_id'     => $post_id,
@@ -366,7 +371,7 @@ class CampaignItemService
    {
       $review_url = add_query_arg('review', $uuid, $permalink);
 
-      return apply_filters('modify_campaign_item', $review_url, $uuid, $post_id);
+      return apply_filters('qr_modify_campaign_item', $review_url, $uuid, $post_id);
    }
 
    /**
@@ -493,7 +498,7 @@ class CampaignItemService
     * }
     * @return array|int|WP_Error Array of campaigns, count if count_only is true, or WP_Error on failure
     */
-   public function get_campaigns_by_post_ids(array $post_ids, array $options = [])
+   public function qr_get_campaigns_by_post_ids(array $post_ids, array $options = [])
    {
       global $wpdb;
 
@@ -506,14 +511,14 @@ class CampaignItemService
 
          // Set default options
          $defaults = [
-            'page' => 1,
-            'per_page' => 10,
-            'offset' => null,
+            'page'       => 1,
+            'per_page'   => 10,
+            'offset'     => null,
             'start_date' => '',
-            'end_date' => '',
-            'status' => '',
-            'order_by' => 'created_at',
-            'order' => 'DESC',
+            'end_date'   => '',
+            'status'     => '',
+            'order_by'   => 'created_at',
+            'order'      => 'DESC',
             'count_only' => false
          ];
 
@@ -525,24 +530,27 @@ class CampaignItemService
 
          // Post IDs filter
          $post_ids_placeholders = implode(',', array_fill(0, count($post_ids), '%d'));
-         $where_conditions[] = "post_id IN ($post_ids_placeholders)";
-         $where_values = array_merge($where_values, $post_ids);
+         $where_conditions[]    = "post_id IN ($post_ids_placeholders)";
+         $where_values          = array_merge($where_values, $post_ids);
 
          // Date filters
          if (!empty($options['start_date'])) {
+
             $where_conditions[] = "created_at >= %s";
-            $where_values[] = $options['start_date'] . ' 00:00:00';
+            $where_values[]    = $options['start_date'] . ' 00:00:00';
          }
 
          if (!empty($options['end_date'])) {
+
             $where_conditions[] = "created_at <= %s";
-            $where_values[] = $options['end_date'] . ' 23:59:59';
+            $where_values[]     = $options['end_date'] . ' 23:59:59';
          }
 
          // Status filter
          if (!empty($options['status'])) {
+
             $where_conditions[] = "status = %s";
-            $where_values[] = sanitize_text_field($options['status']);
+            $where_values[]     = sanitize_text_field($options['status']);
          }
 
          $where_clause = !empty($where_conditions) ? 'WHERE ' . implode(' AND ', $where_conditions) : '';
@@ -560,23 +568,23 @@ class CampaignItemService
 
          // Build ORDER BY clause
          $allowed_order_by = ['id', 'campaign_name', 'post_id', 'status', 'created_at', 'updated_at', 'start_date', 'end_date'];
-         $order_by = in_array($options['order_by'], $allowed_order_by) ? $options['order_by'] : 'created_at';
-         $order = strtoupper($options['order']) === 'ASC' ? 'ASC' : 'DESC';
+         $order_by         = in_array($options['order_by'], $allowed_order_by) ? $options['order_by'] : 'created_at';
+         $order            = strtoupper($options['order']) === 'ASC' ? 'ASC' : 'DESC';
 
          // Build LIMIT clause
          $limit_clause = '';
          if ($options['offset'] !== null) {
             $limit_clause = $wpdb->prepare("LIMIT %d, %d", (int) $options['offset'], (int) $options['per_page']);
          } else {
-            $offset = ((int) $options['page'] - 1) * (int) $options['per_page'];
+            $offset       = ((int) $options['page'] - 1) * (int) $options['per_page'];
             $limit_clause = $wpdb->prepare("LIMIT %d, %d", $offset, (int) $options['per_page']);
          }
 
          // Build final query
          $sql = "SELECT * FROM {$this->campaign_table}
-                $where_clause
-                ORDER BY $order_by $order
-                $limit_clause";
+                  $where_clause
+                  ORDER BY $order_by $order
+                  $limit_clause";
 
          if (!empty($where_values)) {
             $sql = $wpdb->prepare($sql, $where_values);
@@ -618,7 +626,7 @@ class CampaignItemService
     * }
     * @return array|int|WP_Error Array of campaign items, count if count_only is true, or WP_Error on failure
     */
-   public function get_campaign_items_by_campaign_id(int $campaign_id, array $options = [])
+   public function qr_get_campaign_items_by_campaign_id(int $campaign_id, array $options = [])
    {
       global $wpdb;
 
@@ -639,15 +647,15 @@ class CampaignItemService
 
          // Set default options
          $defaults = [
-            'page' => 1,
-            'per_page' => 10,
-            'offset' => null,
-            'status' => '',
-            'start_date' => '',
-            'end_date' => '',
-            'order_by' => 'created_at',
-            'order' => 'DESC',
-            'count_only' => false,
+            'page'        => 1,
+            'per_page'    => 10,
+            'offset'      => null,
+            'status'      => '',
+            'start_date'  => '',
+            'end_date'    => '',
+            'order_by'    => 'created_at',
+            'order'       => 'DESC',
+            'count_only'  => false,
             'include_stats' => false
          ];
 
@@ -655,23 +663,23 @@ class CampaignItemService
 
          // Build WHERE clause
          $where_conditions = ['campaign_id = %d'];
-         $where_values = [$campaign_id];
+         $where_values     = [$campaign_id];
 
          // Status filter
          if (!empty($options['status'])) {
             $where_conditions[] = "status = %s";
-            $where_values[] = sanitize_text_field($options['status']);
+            $where_values[]     = sanitize_text_field($options['status']);
          }
 
          // Date filters
          if (!empty($options['start_date'])) {
             $where_conditions[] = "created_at >= %s";
-            $where_values[] = $options['start_date'] . ' 00:00:00';
+            $where_values[]     = $options['start_date'] . ' 00:00:00';
          }
 
          if (!empty($options['end_date'])) {
             $where_conditions[] = "created_at <= %s";
-            $where_values[] = $options['end_date'] . ' 23:59:59';
+            $where_values[]     = $options['end_date'] . ' 23:59:59';
          }
 
          $where_clause = 'WHERE ' . implode(' AND ', $where_conditions);
@@ -692,26 +700,25 @@ class CampaignItemService
 
          // Build ORDER BY clause
          $allowed_order_by = ['id', 'reference', 'campaign_id', 'status', 'created_at', 'count'];
-         $order_by = in_array($options['order_by'], $allowed_order_by) ? $options['order_by'] : 'created_at';
-         $order = strtoupper($options['order']) === 'ASC' ? 'ASC' : 'DESC';
+         $order_by         = in_array($options['order_by'], $allowed_order_by) ? $options['order_by'] : 'created_at';
+         $order            = strtoupper($options['order']) === 'ASC' ? 'ASC' : 'DESC';
 
          // Build LIMIT clause
          $limit_clause = '';
          if ($options['offset'] !== null) {
             $limit_clause = $wpdb->prepare("LIMIT %d, %d", (int) $options['offset'], (int) $options['per_page']);
          } else {
-            $offset = ((int) $options['page'] - 1) * (int) $options['per_page'];
+            $offset       = ((int) $options['page'] - 1) * (int) $options['per_page'];
             $limit_clause = $wpdb->prepare("LIMIT %d, %d", $offset, (int) $options['per_page']);
          }
 
          // Build final query
          $sql = "SELECT $select_fields FROM {$this->campaign_item_table}
-                $where_clause
-                ORDER BY $order_by $order
-                $limit_clause";
+                  $where_clause
+                  ORDER BY $order_by $order
+                  $limit_clause";
 
-         $sql = $wpdb->prepare($sql, $where_values);
-
+         $sql     = $wpdb->prepare($sql, $where_values);
          $results = $wpdb->get_results($sql, ARRAY_A);
 
          if ($results === false) {
