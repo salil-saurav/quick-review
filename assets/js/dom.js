@@ -81,7 +81,6 @@ const APIService = {
       if (flag === 'reviewUrl') {
          return this.makeRequest('delete_campaign_item', { reference: key });
       } else {
-         console.log("this ran");
 
          return this.makeRequest('delete_campaign', { id: key });
       }

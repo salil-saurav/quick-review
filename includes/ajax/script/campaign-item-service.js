@@ -1,11 +1,14 @@
 class ReviewService {
-   constructor(createBtn) {
-      this.createBtn = createBtn;
+   constructor(showModal, campaingItemName, createButton) {
+      this.showModal = showModal;
+      this.campaingItemName = campaingItemName;
+      this.createButton = createButton
    }
 
    async create(formData) {
       formData.append('action', 'create_campaign_item');
-      formData.append('post_id', this.createBtn.dataset.post);
+      formData.append('post_id', this.showModal.dataset.post);
+      formData.append('name', this.campaingItemName.value);
 
       const response = await fetch(window.ajaxurl, {
          method: 'POST',
@@ -17,41 +20,63 @@ class ReviewService {
    }
 
    init() {
-      if (!this.createBtn) return;
+      if (!this.showModal) return;
 
-      this.createBtn.addEventListener('click', async (e) => {
+      this.showModal.addEventListener('click', (e) => {
          e.preventDefault();
 
-         this.setLoading(true);
+         const campaignOverlay = document.getElementById('campaign-item-overlay');
+         const close = campaignOverlay.querySelector('.close-button');
 
-         try {
-            const formData = new FormData();
-            const result = await this.create(formData);
+         const popupInstance = new PopupHandler(campaignOverlay, close);
+         popupInstance.show();
 
-            if (result.success) {
-               AlertService.show(result.data.message, 'success');
-               setTimeout(() => location.reload(), 500);
-            } else {
-               AlertService.show(result.data.message || 'Error occurred', 'error');
+      });
+
+      this.createButton.addEventListener('click', async () => {
+
+         if (this.campaingItemName.value) {
+            this.setLoading(true, this.createButton);
+
+            try {
+
+               const formData = new FormData();
+               const result = await this.create(formData);
+
+               if (result.success) {
+                  AlertService.show(result.data.message, 'success');
+
+                  setTimeout(() => location.reload(), 500);
+               } else {
+                  AlertService.show(result.data.message || 'Error occurred', 'error');
+               }
+
+            } catch (error) {
+               console.error(error);
+               AlertService.show("Something went wrong", "error");
             }
 
-         } catch (error) {
-            console.error(error);
-            AlertService.show("Something went wrong", "error");
+            this.setLoading(false);
+         } else {
+            this.campaingItemName.focus();
          }
-
-         this.setLoading(false);
-      });
+      })
    }
 
+
+
    setLoading(isLoading) {
-      this.createBtn.textContent = isLoading ? 'Creating URL...' : 'Create New URL';
-      this.createBtn.disabled = isLoading;
+
+      this.createButton.textContent = isLoading ? 'Creating...' : 'Create';
+      this.createButton.disabled = isLoading;
    }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-   const createBtn = document.getElementById("populateReview");
-   const reviewService = new ReviewService(createBtn);
+   const showModal = document.getElementById("populateReview"),
+      campaingItemName = document.querySelector('input[name="campaign_item_name"]'),
+      createButton = document.getElementById('createCampaignItem');
+
+   const reviewService = new ReviewService(showModal, campaingItemName, createButton);
    reviewService.init();
 });

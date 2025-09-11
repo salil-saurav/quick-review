@@ -1,6 +1,6 @@
 <?php
 
-require_once QUICK_REVIEW_PLUGIN_DIR . '/helper/settings.php';
+require_once QR_PLUGIN_DIR . '/helper/settings.php';
 /**
  * AJAX handler for post search functionality
  *

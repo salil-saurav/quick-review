@@ -271,6 +271,20 @@ div#url_table table {
    margin-top: 52px;
 }
 
+#campaign-item-overlay .form {
+   display: flex;
+   align-items: end;
+   gap: 16px;
+}
+
+#campaign-item-overlay.confirmation-overlay .modal {
+   width: 600px !important;
+}
+
+#campaign-item-overlay .form .item-name {
+   flex: 1;
+}
+
 @keyframes popShake {
    0% {
       transform: translateY(0) scale(1);

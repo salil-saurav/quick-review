@@ -1,5 +1,7 @@
 <?php
 
+require_once QR_PLUGIN_DIR . '/helper/settings.php';
+
 
 if (!current_user_can('manage_options')) {
    wp_die(__('You do not have sufficient permissions to access this page.'));
@@ -26,7 +28,10 @@ class CampaignDashboard
 ?>
       <div class="wrap review-wrap">
          <?php
-         if (get_option('qrs_plugin_settings')) {
+
+         $posts = get_post_count();
+
+         if (strlen($posts[0]) > 0 && count($posts) >= 1) {
             $this->render_content();
          } else {
             $this->render_error_page();

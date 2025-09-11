@@ -37,17 +37,17 @@ function render_single_data($column, $count, $table_name, $post_id = false)
 
       $row = [
          's_no'           => $count,
+         'id'             => $column->id,
          'campaign_name'  => $column->campaign_name,
          'review_count'   => sprintf('<span class="review_count" data-post="%d"> %d </span>', esc_attr($column->post_id), review_url_count($column->id)),
          'start_date'     => $column->start_date,
          'end_date'       => $column->end_date,
          'status'         => build_status_column($column->status),
-         'post_id'        => $column->post_id,
+         'post_id'        => build_post_column($column->post_id),
          'action'         => build_action_button($column->post_id),
          'date'           => date('Y-m-d H:i A', strtotime($column->created_at)),
          'update'         => sprintf('<span data-camp="%d" class="dashicons dashicons-edit"></span>', $column->id),
          'remove'       => sprintf('<span data-id="%s" class="remove-row dashicons dashicons-no"></span>', $column->id)
-
       ];
 
       render_table_row($row);
@@ -60,13 +60,14 @@ function render_single_data($column, $count, $table_name, $post_id = false)
       );
 
       $row = [
-         's_no'         => $count,
-         'reference'    => $column->reference,
-         'count'        => $column->count,
-         'review_url'   => $review_url,
-         'copy'         => '<button class="copy-url" data-target="' . $review_url . '" >📋</button>',
-         'date'         => date('Y-m-d H:i A', strtotime($column->created_at)),
-         'remove'       => sprintf('<span data-reference="%s" class="remove-row dashicons dashicons-no"></span>', $column->reference)
+         's_no'       => $count,
+         'name'       => $column->name,
+         'reference'  => $column->reference,
+         'count'      => $column->count,
+         'review_url' => $review_url,
+         'copy'       => '<button class="copy-url" data-target="' . $review_url . '" >📋</button>',
+         'date'       => date('Y-m-d H:i A', strtotime($column->created_at)),
+         'remove'     => sprintf('<span data-reference="%s" class="remove-row dashicons dashicons-no"></span>', $column->reference)
       ];
 
       render_table_row($row);
@@ -88,6 +89,13 @@ function build_status_column($status)
       esc_attr($status_class),
       esc_html(ucfirst($status))
    );
+}
+
+function build_post_column($post_id)
+{
+
+   $post_title = get_the_title($post_id);
+   return sprintf('<span> %s ( %d ) </span>', ucfirst($post_title), $post_id);
 }
 
 

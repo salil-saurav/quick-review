@@ -110,36 +110,6 @@ add_action('qr_after_campaign_item_created', function($result, $args) {
         $args['post_id'],
         $result['reference']
     ));
-
-    // Send notification email
-    $post_title = get_the_title($args['post_id']);
-    $admin_email = get_option('admin_email');
-
-    wp_mail(
-        $admin_email,
-        'New Review URL Created',
-        sprintf(
-            'A new review URL has been created for "%s":%s%s',
-            $post_title,
-            PHP_EOL . PHP_EOL,
-            $result['review_campaign_item']
-        )
-    );
-
-    // Update post meta with latest review URL
-    update_post_meta($args['post_id'], '_latest_review_url', $result['review_campaign_item']);
-
-    // Trigger webhook for external integrations
-    wp_remote_post('https://your-webhook-url.com/review-created', [
-        'body' => json_encode([
-            'post_id' => $args['post_id'],
-            'reference' => $result['reference'],
-            'review_url' => $result['review_campaign_item']
-        ]),
-        'headers' => [
-            'Content-Type' => 'application/json'
-        ]
-    ]);
 }, 10, 2);
 ```
 
@@ -241,63 +211,6 @@ add_filter('modify_campaign_item', function($review_url, $uuid, $post_id) {
 
     return $custom_url;
 }, 10, 3);
-```
-
-### Example 4: Integration with External CRM
-
-```php
-// Send review URLs to external CRM when created
-add_action('qr_after_campaign_item_created', function($result, $args) {
-    $post_id = $args['post_id'];
-    $post = get_post($post_id);
-
-    // Get customer email from post meta (assuming it's stored there)
-    $customer_email = get_post_meta($post_id, 'customer_email', true);
-
-    if ($customer_email) {
-        // Send to CRM API
-        wp_remote_post('https://your-crm.com/api/review-links', [
-            'body' => json_encode([
-                'customer_email' => $customer_email,
-                'product_name' => $post->post_title,
-                'review_url' => $result['review_campaign_item'],
-                'reference' => $result['reference']
-            ]),
-            'headers' => [
-                'Content-Type' => 'application/json',
-                'Authorization' => 'Bearer ' . get_option('crm_api_token')
-            ]
-        ]);
-    }
-}, 10, 2);
-```
-
-### Example 5: Scheduled Review URL Cleanup
-
-```php
-// Clean up old unused review URLs
-add_action('qr_cleanup_old_review_urls', function() {
-    global $wpdb;
-
-    $campaign_item_table = $wpdb->prefix . 'qr_review_campaign_item';
-
-    // Delete items older than 30 days that haven't been used
-    $wpdb->query($wpdb->prepare("
-        DELETE FROM {$campaign_item_table}
-        WHERE created_at < DATE_SUB(NOW(), INTERVAL 30 DAY)
-        AND status = 'active'
-        AND id NOT IN (
-            SELECT DISTINCT campaign_item_id
-            FROM {$wpdb->prefix}qr_review_responses
-            WHERE campaign_item_id IS NOT NULL
-        )
-    "));
-});
-
-// Schedule the cleanup to run daily
-if (!wp_next_scheduled('qr_cleanup_old_review_urls')) {
-    wp_schedule_event(time(), 'daily', 'qr_cleanup_old_review_urls');
-}
 ```
 
 ## Security Considerations

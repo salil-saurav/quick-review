@@ -11,7 +11,7 @@ if (!isset($_GET['post_id']) || empty($_GET['post_id'])) {
 // Sanitize the post_id
 $post_id = sanitize_text_field($_GET['post_id']);
 
-require_once QUICK_REVIEW_PLUGIN_DIR . '/helper/helpers.php';
+require_once QR_PLUGIN_DIR . '/helper/helpers.php';
 
 $page_data = [];
 
@@ -46,7 +46,7 @@ $campaign_details = $wpdb->get_row(
          <div class="header-cta">
             <a href="<?= admin_url('admin.php?page=quick-review') ?>"> <span> &#10157;</span> campaigns </a>
             <h2>
-               Review URLs:
+               Campaign Item:
                <span class="campaign-name"><?= esc_html($campaign_details->campaign_name) ?></span>
                <span class="status-badge status-<?= esc_attr($campaign_details->status) ?>">
                   <?= ucfirst(esc_html($campaign_details->status)) ?>
@@ -62,6 +62,7 @@ $campaign_details = $wpdb->get_row(
          <thead>
             <tr>
                <th>S/No</th>
+               <th>Name</th>
                <th>Reference ID</th>
                <th>Count</th>
                <th>Review Url</th>
@@ -79,10 +80,11 @@ $campaign_details = $wpdb->get_row(
       require_once __DIR__ . '/partials/campaign-item-pagination.php';
       require_once __DIR__ . '/partials/campaign-form.php';
       require_once __DIR__ . '/partials/confirmation.php';
+      require_once __DIR__ . '/partials/campaign-item-form.php';
       ?>
 
    </div>
 </div>
 
-<script src="<?= QUICK_REVIEW_PLUGIN_URL ?>/includes/ajax/script/campaign-item-service.js"></script>
-<script src="<?= QUICK_REVIEW_PLUGIN_URL ?>/includes/ajax/script/campaign-service.js"></script>
+<script src="<?= QR_PLUGIN_URL ?>/includes/ajax/script/campaign-item-service.js"></script>
+<script src="<?= QR_PLUGIN_URL ?>/includes/ajax/script/campaign-service.js"></script>

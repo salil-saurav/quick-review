@@ -7,7 +7,7 @@ if (!current_user_can('manage_options')) {
 $nonce = wp_create_nonce('qrs_save_activation_form');
 $roles = wp_roles()->roles;
 
-require_once QUICK_REVIEW_PLUGIN_DIR . '/helper/settings.php';
+require_once QR_PLUGIN_DIR . '/helper/settings.php';
 
 $post_types = get_post_types([
    'public'   => true,
@@ -65,4 +65,4 @@ if ($config && isset($config['post_types'])) {
 </div>
 
 
-<script src="<?= QUICK_REVIEW_PLUGIN_URL ?>assets/js/setup.js"></script>
+<script src="<?= QR_PLUGIN_URL ?>assets/js/setup.js"></script>

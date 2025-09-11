@@ -22,7 +22,7 @@
                      <select name="status" id="status" required>
                         <option value="draft">Draft</option>
                         <option value="pending">Pending</option>
-                        <option value="published">published</option>
+                        <option value="published">Published</option>
                      </select>
                   </label>
                </div>
