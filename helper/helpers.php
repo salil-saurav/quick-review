@@ -6,7 +6,7 @@
  * @param int $campaign_id The ID of the campaign.
  * @return int The total count of reviews (returns 0 if none found).
  */
-function review_url_count($campaign_id)
+function qr_review_url_count($campaign_id)
 {
    global $wpdb;
 
@@ -30,7 +30,7 @@ function review_url_count($campaign_id)
  * @param string $table_name The name of the table to determine rendering logic.
  * @return void
  */
-function render_single_data($column, $count, $table_name, $post_id = false)
+function qr_render_single_data($column, $count, $table_name, $post_id = false)
 {
    // Build table row
    if ($table_name === QR_CAMPAIGN) {
@@ -39,18 +39,18 @@ function render_single_data($column, $count, $table_name, $post_id = false)
          's_no'           => $count,
          'id'             => $column->id,
          'campaign_name'  => $column->campaign_name,
-         'review_count'   => sprintf('<span class="review_count" data-post="%d"> %d </span>', esc_attr($column->post_id), review_url_count($column->id)),
+         'review_count'   => sprintf('<span class="review_count" data-post="%d"> %d </span>', esc_attr($column->post_id), qr_review_url_count($column->id)),
          'start_date'     => $column->start_date,
          'end_date'       => $column->end_date,
-         'status'         => build_status_column($column->status),
-         'post_id'        => build_post_column($column->post_id),
-         'action'         => build_action_button($column->post_id),
+         'status'         => qr_build_status_column($column->status),
+         'post_id'        => qr_build_post_column($column->post_id),
+         'action'         => qr_build_action_button($column->post_id),
          'date'           => date('Y-m-d H:i A', strtotime($column->created_at)),
          'update'         => sprintf('<span data-camp="%d" class="dashicons dashicons-edit"></span>', $column->id),
          'remove'       => sprintf('<span data-id="%s" class="remove-row dashicons dashicons-no"></span>', $column->id)
       ];
 
-      render_table_row($row);
+      qr_render_table_row($row);
    } else {
 
       $permalink = get_permalink($post_id);
@@ -70,7 +70,7 @@ function render_single_data($column, $count, $table_name, $post_id = false)
          'remove'     => sprintf('<span data-reference="%s" class="remove-row dashicons dashicons-no"></span>', $column->reference)
       ];
 
-      render_table_row($row);
+      qr_render_table_row($row);
    }
 }
 
@@ -81,7 +81,7 @@ function render_single_data($column, $count, $table_name, $post_id = false)
  * @param string $status The status value.
  * @return string The HTML markup for the status column.
  */
-function build_status_column($status)
+function qr_build_status_column($status)
 {
    $status_class = 'status-badge status-' . strtolower($status);
    return sprintf(
@@ -91,7 +91,7 @@ function build_status_column($status)
    );
 }
 
-function build_post_column($post_id)
+function qr_build_post_column($post_id)
 {
 
    $post_title = get_the_title($post_id);
@@ -105,7 +105,7 @@ function build_post_column($post_id)
  * @param int $postId The post ID associated with the campaign.
  * @return string The HTML markup for the action button.
  */
-function build_action_button($postId)
+function qr_build_action_button($postId)
 {
    $admin_url = admin_url('admin.php?page=campaign-dashboard');
 
@@ -123,7 +123,7 @@ function build_action_button($postId)
  * @param array $row An associative array of column values for the row.
  * @return void
  */
-function render_table_row($row)
+function qr_render_table_row($row)
 {
    echo "<tr>";
    foreach ($row as $value) {
@@ -141,7 +141,7 @@ function render_table_row($row)
  * @return void
  */
 
-function render_table($page_data, $table_name, $post_id = false)
+function qr_render_table($page_data, $table_name, $post_id = false)
 {
    $current_page   = $page_data['current_page'];
    $items_per_page = $page_data['items_per_page'];
@@ -220,7 +220,7 @@ function render_table($page_data, $table_name, $post_id = false)
    $count = $starting_count;
    foreach ($data as $column) {
 
-      render_single_data($column, $count, $table_name, $post_id);
+      qr_render_single_data($column, $count, $table_name, $post_id);
       $count++;
    }
 }
@@ -235,7 +235,7 @@ function render_table($page_data, $table_name, $post_id = false)
  * @return int|null The total count of reviews, or null if invalid campaign.
  */
 
-function get_total_count($include_dates, $table_name, $post_id = false)
+function qr_get_total_count($include_dates, $table_name, $post_id = false)
 {
    global $wpdb;
    $table = $wpdb->prefix . $table_name;

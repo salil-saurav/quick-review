@@ -20,7 +20,7 @@ class QR_Search_Handler
 
    private function init()
    {
-      $this->config = get_plugin_settings();
+      $this->config = qr_get_plugin_settings();
 
       if ($this->config && !empty($this->config)) {
 
@@ -30,10 +30,10 @@ class QR_Search_Handler
 
    private function register_hooks()
    {
-      add_action('wp_ajax_search_posts', [$this, 'handle_post_search']);
+      add_action('wp_ajax_search_posts', [$this, 'qr_handle_post_search']);
    }
 
-   public function handle_post_search()
+   public function qr_handle_post_search()
    {
       check_ajax_referer('search_nonce', 'nonce');
 

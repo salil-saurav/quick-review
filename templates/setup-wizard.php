@@ -14,7 +14,7 @@ $post_types = get_post_types([
    '_builtin' => false
 ], 'names');
 
-$config = get_plugin_settings();
+$config = qr_get_plugin_settings();
 $config_post_types = [];
 if ($config && isset($config['post_types'])) {
    $config_post_types = explode(",", $config['post_types'][0]);

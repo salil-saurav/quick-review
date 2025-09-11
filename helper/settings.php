@@ -1,6 +1,6 @@
 <?php
 
-function get_plugin_settings()
+function qr_get_plugin_settings()
 {
    global $wpdb;
 
@@ -24,7 +24,7 @@ function get_plugin_settings()
    return maybe_unserialize($row['option_value']);
 }
 
-function get_post_count()
+function qr_get_post_count()
 {
    global $wpdb;
 

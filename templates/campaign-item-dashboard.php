@@ -22,7 +22,7 @@ $items_per_page = $per_page; // Number of items per page
 $current_page   = isset($_GET['paged']) ? max(1, intval($_GET['paged'])) : 1;
 $start_date     = isset($_POST['start_date']) ? max(1, intval($_POST['start_date'])) : 1;
 $end_date       = isset($_POST['end_date']) ? max(1, intval($_POST['end_date'])) : 1;
-$total_items    = get_total_count(true, QR_CAMPAIGN_ITEM, $post_id);
+$total_items    = qr_get_total_count(true, QR_CAMPAIGN_ITEM, $post_id);
 
 
 $page_data['items_per_page'] = $items_per_page;
@@ -71,8 +71,8 @@ $campaign_details = $wpdb->get_row(
                <th> Remove </th>
             </tr>
          </thead>
-         <tbody class="review-list" data-total="<?= get_total_count(false, QR_CAMPAIGN_ITEM, $post_id) ?>">
-            <?php render_table($page_data, QR_CAMPAIGN_ITEM, $post_id); ?>
+         <tbody class="review-list" data-total="<?= qr_get_total_count(false, QR_CAMPAIGN_ITEM, $post_id) ?>">
+            <?php qr_render_table($page_data, QR_CAMPAIGN_ITEM, $post_id); ?>
          </tbody>
       </table>
 

@@ -42,6 +42,12 @@ add_action('admin_init', function () {
    }
 });
 
+/**
+ * Actions
+ */
+add_action('wp_set_comment_status', 'qr_handle_comment_status_change', 10, 2);
+add_action('delete_comment', 'qr_handle_comment_deletion');
+
 // Handle activation form submission
 add_action('admin_init', function () {
    if (
@@ -89,18 +95,13 @@ function create_or_update_qr_settings($data = [])
 }
 
 
-/**
- * Handle comment status changes for reference-based reviews.
- */
-add_action('wp_set_comment_status', 'qr_handle_comment_status_change', 10, 2);
+
+
 function qr_handle_comment_status_change($comment_id, $comment_status)
 {
    global $wpdb;
 
-   error_log("qr_handle_comment_status_change: Called for comment_id={$comment_id}, status={$comment_status}");
-
    $reference = get_comment_meta($comment_id, 'reference', true);
-   error_log("qr_handle_comment_status_change: Reference meta = " . print_r($reference, true));
    if (empty($reference)) {
       error_log("qr_handle_comment_status_change: No reference found, aborting.");
       return;
@@ -110,8 +111,6 @@ function qr_handle_comment_status_change($comment_id, $comment_status)
    $campaign_table      = $wpdb->prefix . QR_CAMPAIGN;
    $comment             = get_comment($comment_id);
    $comment_post_id     = $comment ? $comment->comment_post_ID : 0;
-
-   error_log("qr_handle_comment_status_change: campaign_item_table={$campaign_item_table}, campaign_table={$campaign_table}, comment_post_id={$comment_post_id}");
 
    // Validate campaign
    $campaign_item = $wpdb->get_row(
@@ -129,9 +128,6 @@ function qr_handle_comment_status_change($comment_id, $comment_status)
       ARRAY_A
    );
 
-
-   error_log("qr_handle_comment_status_change: campaign_item = " . print_r($campaign_item, true));
-
    if (!$campaign_item) {
       error_log("qr_handle_comment_status_change: No valid campaign item found, aborting.");
       return;
@@ -147,7 +143,6 @@ function qr_handle_comment_status_change($comment_id, $comment_status)
             $reference
          )
       );
-      error_log("qr_handle_comment_status_change: Incremented count for reference={$reference}, result={$result}");
    }
    // If changed from approved → something else → decrement
    else {
@@ -159,14 +154,12 @@ function qr_handle_comment_status_change($comment_id, $comment_status)
             $reference
          )
       );
-      error_log("qr_handle_comment_status_change: Decremented count for reference={$reference}, result={$result}");
    }
 }
 
 /**
  * Handle comment deletion → decrement if approved.
  */
-add_action('delete_comment', 'qr_handle_comment_deletion');
 function qr_handle_comment_deletion($comment_id)
 {
    global $wpdb;
