@@ -39,7 +39,7 @@
 
                <div class="form-group">
                   <label> End Date
-                     <input type="date" name="end_date" required min="<?php echo $today; ?>">
+                     <input type="date" name="end_date" min="<?php echo $today; ?>">
                   </label>
                </div>
             </div>

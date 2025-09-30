@@ -1,34 +1,19 @@
 <?php
 
+/**
+ * Main class for handling Quick Review functionality.
+ *
+ * This class manages the core functionality of the Quick Review plugin including:
+ * - Plugin activation and deactivation hooks
+ * - Admin menu registration
+ * - Script and style enqueuing
+ * - Screen options management
+ * - Template rendering
+ *
+ * @since 1.0.0
+ */
 require_once plugin_dir_path(__FILE__) . 'class-database-manager.php';
 
-/**
- * Class Quick_Review
- *
- * Main class for the Quick Review WordPress plugin.
- * Handles initialization, activation/deactivation hooks, admin menu registration,
- * script/style enqueuing, screen options, and rendering of admin pages.
- *
- * @package Quick_Review
- *
- * Properties:
- * @property string $base_url Base URL for plugin assets.
- *
- * Methods:
- * @method void init() Initializes plugin dependencies and hooks.
- * @method static void activate() Handles plugin activation logic.
- * @method static void deactivate() Handles plugin deactivation logic.
- * @method void enqueue_scripts() Enqueues admin scripts and styles for plugin pages.
- * @method bool is_plugin_page() Determines if current page is a plugin-related admin page.
- * @method void register_admin_menu() Registers admin menu and submenus for the plugin.
- * @method void conditionally_add_screen_options(WP_Screen $screen) Adds screen options for specific plugin pages.
- * @method void qr_render_admin_page() Renders the main admin page template.
- * @method void qr_render_campaign_item() Renders the campaign dashboard template.
- * @method void qr_render_setup_wizard() Renders the setup wizard template.
- * @method void render_logs() Renders the logs page template.
- * @method void handle_screen_options() Handles screen options and redirects for admin pages.
- * @method mixed save_screen_option($status, $option, $value) Saves custom screen option values.
- */
 
 class Quick_Review
 {

@@ -1,24 +1,37 @@
 <?php
 
 /**
- * Class QRDatabaseManager
+ * Database Manager for Quick Review Plugin
  *
- * Handles the initialization and management of review-related database tables for the Quick Review plugin.
+ * This class manages the database operations for the Quick Review plugin, handling
+ * the creation and maintenance of campaign and review-related tables.
  *
- * Responsibilities:
- * - Automatically creates required database tables (`campaign` and `review`) if they do not exist.
- * - Provides methods to check for table existence and to create tables with appropriate schema.
- * - Ensures referential integrity between campaign and review tables via foreign key constraints.
+ * @package QuickReview
+ * @since 1.0.0
  *
- * Methods:
- * - __construct(): Initializes the class and triggers table creation if necessary.
- * - maybe_create_tables(): Checks for table existence and creates them if missing.
- * - tables_exist(array $table_names): Verifies the existence of specified tables.
- * - create_campaign_table(string $table_name): Creates the campaign table with required columns and constraints.
- * - create_campaign_item_table(string $table_name): Creates the review table with a foreign key to the campaign table.
+ * Database Schema:
+ * - Campaign Table:
+ *   - id (INT): Auto-incrementing primary key starting from 256737
+ *   - campaign_name (VARCHAR): Name of the campaign
+ *   - start_date (DATE): Campaign start date
+ *   - end_date (DATE): Campaign end date
+ *   - status (ENUM): Campaign status ('draft', 'pending', 'published')
+ *   - post_id (INT): Associated WordPress post ID
+ *   - created_at (DATETIME): Timestamp of creation
  *
- * Usage:
- * Instantiate this class to ensure the necessary tables for campaign and review management are present in the database.
+ * - Campaign Item Table:
+ *   - reference (VARCHAR): Primary key
+ *   - name (VARCHAR): Item name
+ *   - campaign_id (INT): Foreign key to campaign table
+ *   - count (INT): Counter field defaulting to 0
+ *   - status (ENUM): Item status ('active', 'inactive')
+ *   - created_at (DATETIME): Timestamp of creation
+ *
+ * Features:
+ * - Automatic table creation on plugin initialization
+ * - Foreign key constraints for data integrity
+ * - Custom charset and collation support
+ * - Table existence verification
  */
 
 class QRDatabaseManager
