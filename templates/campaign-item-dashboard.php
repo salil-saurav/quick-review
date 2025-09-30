@@ -77,10 +77,10 @@ $campaign_details = $wpdb->get_row(
       </table>
 
       <?php
-      require_once __DIR__ . '/partials/campaign-item-pagination.php';
-      require_once __DIR__ . '/partials/campaign-form.php';
-      require_once __DIR__ . '/partials/confirmation.php';
-      require_once __DIR__ . '/partials/campaign-item-form.php';
+      include_once __DIR__ . '/partials/campaign-item-pagination.php';
+      include_once __DIR__ . '/partials/campaign-form.php';
+      include_once __DIR__ . '/partials/confirmation.php';
+      include_once __DIR__ . '/partials/campaign-item-form.php';
       ?>
 
    </div>

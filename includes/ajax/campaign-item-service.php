@@ -298,7 +298,7 @@ class CampaignItemService
       $campaign = $wpdb->get_row(
          $wpdb->prepare(
             "SELECT id, status FROM {$this->campaign_table}
-                 WHERE id = %d AND post_id = %d",
+                  WHERE id = %d AND post_id = %d",
             $campaign_id,
             $post_id
          )

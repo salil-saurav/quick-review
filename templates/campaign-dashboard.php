@@ -44,12 +44,12 @@ $page_data['current_page']   =  $current_page;
       </tbody>
    </table>
 
-   <?php require_once __DIR__ . '/partials/campaign-pagination.php'; ?>
+   <?php include_once __DIR__ . '/partials/campaign-pagination.php'; ?>
 </div>
 
 <?php
-require_once __DIR__ . '/partials/campaign-form.php';
-require_once __DIR__ . '/partials/confirmation.php';
+include_once __DIR__ . '/partials/campaign-form.php';
+include_once __DIR__ . '/partials/confirmation.php';
 
 ?>
 
